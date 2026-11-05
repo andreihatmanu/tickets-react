@@ -1,14 +1,23 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { z } from "zod";
 
 import { Pagination } from "../components/Pagination";
 import { Spinner } from "../components/Spinner";
 import { TicketRow } from "../components/TicketRow";
 
 import type { Ticket } from "../features/tickets/schemas/ticket.schema";
+import { TicketState } from "../features/tickets/schemas/ticket.schema";
 
 import { useDebounce } from "../hooks/useDebounce";
 import { notify as n } from "../hooks/notify";
+
+const stateLabels: Record<z.infer<typeof TicketState>, string> = {
+  REPORTED: "Reportado",
+  IN_PROGRESS: "En curso",
+  PENDING_SECURITY: "Pendiente de seguridad",
+  DONE: "Hecho"
+};
 
 export function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -24,7 +33,14 @@ export function TicketsPage() {
 
   const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
   const limit = 20;
-  const state = searchParams.get("state") || "ALL";
+
+  const stateParam = searchParams.get("state");
+  const parsedState = TicketState.safeParse(stateParam);
+  const state = parsedState.success ? parsedState.data : "ALL";
+
+  useEffect(() => {
+    setSearchInput(queryFromUrl);
+  }, [queryFromUrl]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,10 +79,12 @@ export function TicketsPage() {
         if (error instanceof Error && error.name === "AbortError") {
           return;
         }
+        const message = "No se han podido cargar los tickets.";
 
         setTickets([]);
         setTotal(0);
-        n.error("No se han podido cargar los tickets.");
+        setError(message);
+        n.error(message);
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -92,7 +110,9 @@ export function TicketsPage() {
     setSearchParams(params);
   };
 
-  const expired = tickets.filter((ticket) => new Date(ticket.targetDate) < new Date());
+  const now = Date.now();
+
+  const expired = tickets.filter((ticket) => new Date(ticket.targetDate).getTime() < now);
 
   return (
     <div>
@@ -100,13 +120,15 @@ export function TicketsPage() {
 
       <select value={state} onChange={(e) => changeState(e.target.value)}>
         <option value="ALL">Todos</option>
-        <option value="REPORTED">Reportado</option>
-        <option value="IN_PROGRESS">En curso</option>
-        <option value="PENDING_SECURITY">Pendiente de seguridad</option>
-        <option value="DONE">Hecho</option>
+
+        {TicketState.options.map((option) => (
+          <option key={option} value={option}>
+            {stateLabels[option]}
+          </option>
+        ))}
       </select>
 
-      {loading && <Spinner label="Cargando tickets..." />}
+      {loading && <Spinner />}
 
       {error && <p role="alert">{error}</p>}
 
@@ -119,6 +141,7 @@ export function TicketsPage() {
           ))}
         </tbody>
       </table>
+
       <Pagination
         total={total}
         offset={offset}
