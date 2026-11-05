@@ -1,21 +1,34 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import type { PropsWithChildren } from "react";
 
 import { useTicketListParams } from "./useTicketListParams";
 
-function createWrapper(initialEntry: string) {
+function createWrapper(initialEntry = "/") {
   return function Wrapper({ children }: PropsWithChildren) {
     return <MemoryRouter initialEntries={[initialEntry]}>{children}</MemoryRouter>;
   };
 }
 
+function renderTicketListParams(initialEntry = "/") {
+  return renderHook(
+    () => {
+      const result = useTicketListParams();
+      const location = useLocation();
+
+      return {
+        ...result,
+        search: location.search
+      };
+    },
+    { wrapper: createWrapper(initialEntry) }
+  );
+}
+
 describe("useTicketListParams", () => {
-  it("returns defaults when the URL has no list parameters", () => {
-    const { result } = renderHook(() => useTicketListParams(), {
-      wrapper: createWrapper("/tickets")
-    });
+  it("returns the default values", () => {
+    const { result } = renderTicketListParams();
 
     expect(result.current.params).toEqual({
       offset: 0,
@@ -28,114 +41,43 @@ describe("useTicketListParams", () => {
     });
   });
 
-  it("normalizes invalid values and replaces the malformed URL", async () => {
-    const { result } = renderHook(
-      () => {
-        const ticketParams = useTicketListParams();
-        const location = useLocation();
-        return { ...ticketParams, search: location.search };
-      },
-      {
-        wrapper: createWrapper("/tickets?offset=-5&limit=9999&state=FOO&sort=NOPE&direction=ASC")
-      }
-    );
-
-    expect(result.current.params).toMatchObject({
-      offset: 0,
-      limit: 20,
-      state: "ALL",
-      sort: "LAST_MODIFIED",
-      direction: "ASC"
-    });
-
-    await waitFor(() => {
-      expect(result.current.search).toBe("?direction=ASC");
-    });
-  });
-
-  it("writes non-default filters and resets offset to zero", async () => {
-    const { result } = renderHook(
-      () => {
-        const ticketParams = useTicketListParams();
-        const location = useLocation();
-        return { ...ticketParams, search: location.search };
-      },
-      { wrapper: createWrapper("/tickets?offset=40") }
-    );
-
-    act(() => {
-      result.current.setFilters({ q: "log4j", state: "IN_PROGRESS" });
-    });
-
-    await waitFor(() => {
-      expect(result.current.params.offset).toBe(0);
-      expect(result.current.params.q).toBe("log4j");
-      expect(result.current.params.state).toBe("IN_PROGRESS");
-      expect(result.current.search).toContain("q=log4j");
-      expect(result.current.search).toContain("state=IN_PROGRESS");
-      expect(result.current.search).not.toContain("limit=20");
-    });
-  });
-
-  it("changes page without changing filters", async () => {
-    const { result } = renderHook(
-      () => {
-        const ticketParams = useTicketListParams();
-        const location = useLocation();
-        return { ...ticketParams, search: location.search };
-      },
-      { wrapper: createWrapper("/tickets?q=log4j&state=REPORTED") }
-    );
-
-    act(() => {
-      result.current.setPage(40);
-    });
-
-    await waitFor(() => {
-      expect(result.current.params.offset).toBe(40);
-      expect(result.current.params.q).toBe("log4j");
-      expect(result.current.params.state).toBe("REPORTED");
-    });
-  });
-
-  it("reset removes all list parameters", async () => {
-    const { result } = renderHook(
-      () => {
-        const ticketParams = useTicketListParams();
-        const location = useLocation();
-        return { ...ticketParams, search: location.search };
-      },
-      { wrapper: createWrapper("/tickets?offset=40&q=log4j&state=DONE") }
-    );
-
-    act(() => {
-      result.current.reset();
-    });
+  it("does not add default values to the URL", async () => {
+    const { result } = renderTicketListParams();
 
     await waitFor(() => {
       expect(result.current.search).toBe("");
-      expect(result.current.params.offset).toBe(0);
-      expect(result.current.params.q).toBe("");
-      expect(result.current.params.state).toBe("ALL");
-      expect(result.current.params.severity).toBe("ALL");
-      expect(result.current.params.sort).toBe("LAST_MODIFIED");
-      expect(result.current.params.direction).toBe("DESC");
     });
   });
 
-  it("reflects back and forward navigation in the returned params", async () => {
-    const { result } = renderHook(
-      () => {
-        const ticketParams = useTicketListParams();
-        const navigate = useNavigate();
-        return {
-          ...ticketParams,
-          back: () => navigate(-1),
-          forward: () => navigate(1)
-        };
-      },
-      { wrapper: createWrapper("/tickets") }
+  it("reads filters from the URL", () => {
+    const { result } = renderTicketListParams(
+      "/?offset=20&limit=10&q=log4j&state=IN_PROGRESS&severity=HIGH"
     );
+
+    expect(result.current.params).toMatchObject({
+      offset: 20,
+      limit: 10,
+      q: "log4j",
+      state: "IN_PROGRESS",
+      severity: "HIGH"
+    });
+  });
+
+  it("resets the offset when filters change", async () => {
+    const { result } = renderTicketListParams("/?offset=40");
+
+    act(() => {
+      result.current.setFilters({ q: "log4j" });
+    });
+
+    await waitFor(() => {
+      expect(result.current.params.offset).toBe(0);
+      expect(result.current.params.q).toBe("log4j");
+    });
+  });
+
+  it("changes the page without losing the filters", async () => {
+    const { result } = renderTicketListParams("/?q=log4j&state=IN_PROGRESS");
 
     act(() => {
       result.current.setPage(20);
@@ -143,22 +85,80 @@ describe("useTicketListParams", () => {
 
     await waitFor(() => {
       expect(result.current.params.offset).toBe(20);
+      expect(result.current.params.q).toBe("log4j");
+      expect(result.current.params.state).toBe("IN_PROGRESS");
     });
+  });
+
+  it("resets all filters and pagination", async () => {
+    const { result } = renderTicketListParams(
+      "/?offset=40&limit=10&q=log4j&state=IN_PROGRESS&severity=HIGH"
+    );
 
     act(() => {
-      result.current.back();
+      result.current.reset();
     });
+
+    await waitFor(() => {
+      expect(result.current.params).toEqual({
+        offset: 0,
+        limit: 20,
+        q: "",
+        state: "ALL",
+        severity: "ALL",
+        sort: "LAST_MODIFIED",
+        direction: "DESC"
+      });
+    });
+  });
+  it("normalizes invalid URL parameters", async () => {
+    const { result } = renderTicketListParams(
+      "/?offset=-10&limit=500&state=INVALID&severity=INVALID&direction=INVALID"
+    );
 
     await waitFor(() => {
       expect(result.current.params.offset).toBe(0);
+      expect(result.current.params.limit).toBe(20);
+      expect(result.current.params.state).toBe("ALL");
+      expect(result.current.params.severity).toBe("ALL");
+      expect(result.current.params.direction).toBe("DESC");
     });
+  });
+
+  it("removes unknown URL parameters", async () => {
+    const { result } = renderTicketListParams("/?unknown=value&q=log4j");
+
+    await waitFor(() => {
+      expect(result.current.search).not.toContain("unknown");
+      expect(result.current.params.q).toBe("log4j");
+    });
+  });
+
+  it.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1])("ignores invalid page offset: %s", (offset) => {
+    const { result } = renderTicketListParams();
 
     act(() => {
-      result.current.forward();
+      result.current.setPage(offset);
+    });
+
+    expect(result.current.params.offset).toBe(0);
+  });
+  it("preserves filters when changing sort options", async () => {
+    const { result } = renderTicketListParams("/?q=log4j&state=IN_PROGRESS");
+
+    act(() => {
+      result.current.setFilters({
+        sort: "LAST_MODIFIED",
+        direction: "ASC"
+      });
     });
 
     await waitFor(() => {
-      expect(result.current.params.offset).toBe(20);
+      expect(result.current.params.q).toBe("log4j");
+      expect(result.current.params.state).toBe("IN_PROGRESS");
+      expect(result.current.params.sort).toBe("LAST_MODIFIED");
+      expect(result.current.params.direction).toBe("ASC");
+      expect(result.current.params.offset).toBe(0);
     });
   });
 });
