@@ -1,10 +1,9 @@
-
 import type { Ticket } from "../schemas/ticket.schema";
 
 export const mockTickets: Ticket[] = [
   {
-    id: "1",
-    key: "TCK-001",
+    id: "tk-00001",
+    key: "SEC-001",
     asset: "SRV-PROD-01",
     assignedTeam: "Infrastructure",
     assignee: "admin@example.com",
@@ -15,8 +14,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T09:30:00Z"
   },
   {
-    id: "2",
-    key: "TCK-002",
+    id: "tk-00002",
+    key: "SEC-002",
     asset: "SRV-DEV-02",
     assignedTeam: "Security",
     assignee: "security@example.com",
@@ -27,8 +26,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T11:15:00Z"
   },
   {
-    id: "3",
-    key: "TCK-003",
+    id: "tk-00003",
+    key: "SEC-003",
     asset: "LAPTOP-042",
     assignedTeam: null,
     assignee: "user@example.com",
@@ -39,8 +38,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T12:00:00Z"
   },
   {
-    id: "4",
-    key: "TCK-004",
+    id: "tk-00004",
+    key: "SEC-004",
     asset: "DB-PROD-01",
     assignedTeam: "Database",
     assignee: "dba@example.com",
@@ -51,8 +50,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-04T16:00:00Z"
   },
   {
-    id: "5",
-    key: "TCK-005",
+    id: "tk-00005",
+    key: "SEC-005",
     asset: "FW-EDGE-01",
     assignedTeam: "Network",
     assignee: "network@example.com",
@@ -63,8 +62,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T08:45:00Z"
   },
   {
-    id: "6",
-    key: "TCK-006",
+    id: "tk-00006",
+    key: "SEC-006",
     asset: "APP-CRM-01",
     assignedTeam: "Applications",
     assignee: "apps@example.com",
@@ -75,8 +74,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T10:20:00Z"
   },
   {
-    id: "7",
-    key: "TCK-007",
+    id: "tk-00007",
+    key: "SEC-007",
     asset: "SRV-PROD-03",
     assignedTeam: "Security",
     assignee: "security@example.com",
@@ -87,8 +86,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T13:00:00Z"
   },
   {
-    id: "8",
-    key: "TCK-008",
+    id: "tk-00008",
+    key: "SEC-008",
     asset: "LAPTOP-105",
     assignedTeam: "Workplace",
     assignee: "support@example.com",
@@ -99,8 +98,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-02T15:30:00Z"
   },
   {
-    id: "9",
-    key: "TCK-009",
+    id: "tk-00009",
+    key: "SEC-009",
     asset: "K8S-CLUSTER-01",
     assignedTeam: "Infrastructure",
     assignee: "devops@example.com",
@@ -111,8 +110,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T14:10:00Z"
   },
   {
-    id: "10",
-    key: "TCK-010",
+    id: "tk-00010",
+    key: "SEC-010",
     asset: "DB-DEV-02",
     assignedTeam: "Database",
     assignee: "dba@example.com",
@@ -123,8 +122,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T14:30:00Z"
   },
   {
-    id: "11",
-    key: "TCK-011",
+    id: "tk-00011",
+    key: "SEC-011",
     asset: "VPN-GATEWAY-01",
     assignedTeam: "Network",
     assignee: "network@example.com",
@@ -135,8 +134,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T09:15:00Z"
   },
   {
-    id: "12",
-    key: "TCK-012",
+    id: "tk-00012",
+    key: "SEC-012",
     asset: "MAIL-SRV-01",
     assignedTeam: "Infrastructure",
     assignee: "admin@example.com",
@@ -147,8 +146,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-04T18:00:00Z"
   },
   {
-    id: "13",
-    key: "TCK-013",
+    id: "tk-00013",
+    key: "SEC-013",
     asset: "API-GATEWAY-02",
     assignedTeam: "Applications",
     assignee: "apps@example.com",
@@ -159,8 +158,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T15:00:00Z"
   },
   {
-    id: "14",
-    key: "TCK-014",
+    id: "tk-00014",
+    key: "SEC-014",
     asset: "NAS-STORAGE-01",
     assignedTeam: "Infrastructure",
     assignee: "storage@example.com",
@@ -171,8 +170,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T10:45:00Z"
   },
   {
-    id: "15",
-    key: "TCK-015",
+    id: "tk-00015",
+    key: "SEC-015",
     asset: "WKS-023",
     assignedTeam: "Workplace",
     assignee: "support@example.com",
@@ -183,8 +182,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T11:50:00Z"
   },
   {
-    id: "16",
-    key: "TCK-016",
+    id: "tk-00016",
+    key: "SEC-016",
     asset: "SRV-TEST-04",
     assignedTeam: "Infrastructure",
     assignee: "admin@example.com",
@@ -195,8 +194,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-01T12:00:00Z"
   },
   {
-    id: "17",
-    key: "TCK-017",
+    id: "tk-00017",
+    key: "SEC-017",
     asset: "PROXY-01",
     assignedTeam: "Network",
     assignee: "network@example.com",
@@ -207,8 +206,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T12:40:00Z"
   },
   {
-    id: "18",
-    key: "TCK-018",
+    id: "tk-00018",
+    key: "SEC-018",
     asset: "ERP-PROD-01",
     assignedTeam: null,
     assignee: "erp@example.com",
@@ -219,8 +218,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T15:20:00Z"
   },
   {
-    id: "19",
-    key: "TCK-019",
+    id: "tk-00019",
+    key: "SEC-019",
     asset: "DNS-01",
     assignedTeam: "Network",
     assignee: "network@example.com",
@@ -231,8 +230,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T08:30:00Z"
   },
   {
-    id: "20",
-    key: "TCK-020",
+    id: "tk-00020",
+    key: "SEC-020",
     asset: "CI-RUNNER-03",
     assignedTeam: "DevOps",
     assignee: "devops@example.com",
@@ -243,8 +242,8 @@ export const mockTickets: Ticket[] = [
     lastModified: "2026-11-05T14:50:00Z"
   },
   {
-    id: "21",
-    key: "TCK-021",
+    id: "tk-00021",
+    key: "SEC-021",
     asset: "CI-RUNNER-03",
     assignedTeam: "DevOps",
     assignee: "devops@example.com",
@@ -253,11 +252,10 @@ export const mockTickets: Ticket[] = [
     targetDate: "2026-11-06T12:00:00Z",
     dueDate: "2027-11-07T12:00:00Z",
     lastModified: "2026-11-01T14:50:00Z"
-  }
-  ,
+  },
   {
-    id: "22",
-    key: "TCK-022",
+    id: "tk-00022",
+    key: "SEC-022",
     asset: "CI-RUNNER-04",
     assignedTeam: "DevOps",
     assignee: "devops@example.com",
@@ -266,5 +264,101 @@ export const mockTickets: Ticket[] = [
     targetDate: "2026-11-06T12:00:00Z",
     dueDate: "2027-11-07T12:00:00Z",
     lastModified: "2026-11-01T14:50:00Z"
-  }
+  },
+  {
+    id: "tk-00023",
+    key: "SEC-023",
+    asset: "CI-RUNNER-05",
+    assignedTeam: "DevOps",
+    assignee: "devops@example.com",
+    severity: "MEDIUM",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  },
+  {
+    id: "tk-00024",
+    key: "SEC-024",
+    asset: "CI-RUNNER-06",
+    assignedTeam: "DevOps",
+    assignee: "devops@example.com",
+    severity: "HIGH",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  },
+  {
+    id: "tk-00025",
+    key: "SEC-025",
+    asset: "CI-RUNNER-07",
+    assignedTeam: "DevOps",
+    assignee: "devops@mail.com",
+    severity: "CRITICAL",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  },
+  {
+    id: "tk-00026",
+    key: "SEC-026",
+    asset: "CI-RUNNER-08",
+    assignedTeam: "DevOps",
+    assignee: "devops@email.com",
+    severity: "LOW",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  },
+  {
+    id: "tk-00027",
+    key: "SEC-027",
+    asset: "CI-RUNNER-09",
+    assignedTeam: "DevOps",
+    assignee: "devops@email.com",
+    severity: "LOW",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  },
+  {
+    id: "tk-00028",
+    key: "SEC-028",
+    asset: "CI-RUNNER-10",
+    assignedTeam: "DevOps",
+    assignee: "devops@email.com",
+    severity: "LOW",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  },
+  {
+    id: "tk-00029",
+    key: "SEC-029",
+    asset: "CI-RUNNER-11",
+    assignedTeam: "DevOps",
+    assignee: "devops@email.com",
+    severity: "LOW",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  },
+  {
+    id: "tk-00030",
+    key: "SEC-030",
+    asset: "CI-RUNNER-12",
+    assignedTeam: "DevOps",
+    assignee: "devops@email.es",
+    severity: "LOW",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  },
 ];

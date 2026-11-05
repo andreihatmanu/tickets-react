@@ -9,9 +9,10 @@
     "preview": "vite preview",
     "api:types": "openapi-typescript ./openapi-rest.yml -o ./src/api/generated/schema.d.ts",
     "api:check": "npm run api:types && git diff --exit-code -- src/api/generated/schema.d.ts",
-    "test:run": "npx vitest run",
+    "test:run": "vitest run",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "vitest"
   },
   "dependencies": {
     "react": "^18.3.1",

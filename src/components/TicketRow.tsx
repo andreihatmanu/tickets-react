@@ -1,25 +1,21 @@
 import type { Ticket } from "../features/tickets/schemas/ticket.schema";
-import { severityLabels, stateLabels } from "../pages/TicketsPage";
-import { useFormatDate } from "../hooks/utils";
+import { severityLabels, stateLabels } from "../features/tickets/ticket-labels";
+import { formatDate } from "../hooks/utils";
+
 type TicketRowProps = {
   ticket: Ticket;
-  onChange?: () => void;
 };
-const { formatDate } = useFormatDate();
-export function TicketRow({ ticket, onChange }: TicketRowProps) {
+
+export function TicketRow({ ticket }: TicketRowProps) {
   return (
     <tr>
-      <td>{ticket.key ?? ticket.id ?? "---"}</td>
-      <td>{ticket.asset ?? "---"}</td>
-      <td>{ticket.assignedTeam ?? "---"}</td>
-      <td>{ticket.assignee ?? "---"}</td>
-      <td>{ticket.state ? stateLabels[ticket.state as keyof typeof stateLabels] : ticket.state}</td>
-      <td>
-        {ticket.severity
-          ? severityLabels[ticket.severity as keyof typeof severityLabels]
-          : ticket.severity}
-      </td>
-      <td>{ticket.targetDate ? formatDate(ticket.targetDate) : "—"}</td>
+      <td>{ticket.key}</td>
+      <td>{ticket.asset}</td>
+      <td>{ticket.assignedTeam ?? "—"}</td>
+      <td>{ticket.assignee}</td>
+      <td>{stateLabels[ticket.state]}</td>
+      <td>{severityLabels[ticket.severity]}</td>
+      <td>{formatDate(ticket.targetDate)}</td>
     </tr>
   );
 }

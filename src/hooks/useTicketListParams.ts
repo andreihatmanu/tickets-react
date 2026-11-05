@@ -3,11 +3,11 @@ import { useSearchParams } from "react-router-dom";
 
 import {
   SeveritySchema as TicketSeverity,
+  TicketSortSchema,
   TicketState
 } from "../features/tickets/schemas/ticket.schema";
 import type { components } from "../api/generated/schema";
 
-const SORT_OPTIONS = ["LAST_MODIFIED", "SEVERITY"] as const;
 const DIRECTION_OPTIONS = ["ASC", "DESC"] as const;
 
 // Tipos derivados de OpenAPI
@@ -86,7 +86,7 @@ function normalizeParams(searchParams: URLSearchParams): TicketListParams {
     q: parseQuery(searchParams.get("q")),
     state: parseEnum(searchParams.get("state"), stateValues, DEFAULTS.state),
     severity: parseEnum(searchParams.get("severity"), severityValues, DEFAULTS.severity),
-    sort: parseEnum(searchParams.get("sort"), SORT_OPTIONS, DEFAULTS.sort),
+    sort: parseEnum(searchParams.get("sort"), TicketSortSchema.options, DEFAULTS.sort),
     direction: parseEnum(searchParams.get("direction"), DIRECTION_OPTIONS, DEFAULTS.direction)
   };
 }
