@@ -241,5 +241,30 @@ export const mockTickets: Ticket[] = [
     targetDate: "2026-11-06T12:00:00Z",
     dueDate: "2026-11-07T12:00:00Z",
     lastModified: "2026-11-05T14:50:00Z"
+  },
+  {
+    id: "21",
+    key: "TCK-021",
+    asset: "CI-RUNNER-03",
+    assignedTeam: "DevOps",
+    assignee: "devops@example.com",
+    severity: "HIGH",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
+  }
+  ,
+  {
+    id: "22",
+    key: "TCK-022",
+    asset: "CI-RUNNER-04",
+    assignedTeam: "DevOps",
+    assignee: "devops@example.com",
+    severity: "LOW",
+    state: "PENDING_SECURITY",
+    targetDate: "2026-11-06T12:00:00Z",
+    dueDate: "2027-11-07T12:00:00Z",
+    lastModified: "2026-11-01T14:50:00Z"
   }
 ];

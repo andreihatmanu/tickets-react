@@ -1,16 +1,17 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
+
 import { TicketsPage } from "./pages/TicketsPage";
 
 export default function App() {
   return (
     <>
       <Routes>
-        <Route path="/teams/:teamId/tickets" element={<TicketsPage />} />
-        <Route path="*" element={<Navigate to="/teams/demo/tickets?offset=0" replace />} />
+        <Route path="/" element={<TicketsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      <ToastContainer position="bottom-right" autoClose={4000} theme="light" />
+      <ToastContainer position="top-center" autoClose={5000} theme="light" />
     </>
   );
 }

@@ -1,23 +1,34 @@
-type PaginationProps = {
+interface PaginationProps {
   total: number;
   offset: number;
   limit: number;
-  onChange: (offset: number) => void;
-};
+  disabled?: boolean;
+  onChange: (nextOffset: number) => void;
+}
 
-export function Pagination({ total, offset, limit, onChange }: PaginationProps) {
-  const previous = Math.max(0, offset - limit);
-  const next = offset + limit;
+export function Pagination({ total, offset, limit, disabled = false, onChange }: PaginationProps) {
+  const first = total === 0 ? 0 : offset + 1;
+  const last = Math.min(offset + limit, total);
+
   return (
-    <nav aria-label="Paginación">
-      <button type="button" disabled={offset <= 0} onClick={() => onChange(previous)}>
+    <nav className="pagination" aria-label="Paginación de tickets">
+      <p aria-live="polite">
+        Mostrando {first}–{last} de {total} tickets
+      </p>
+
+      <button
+        type="button"
+        disabled={disabled || offset === 0}
+        onClick={() => onChange(Math.max(0, offset - limit))}
+      >
         Anterior
       </button>
-      <span>
-        {" "}
-        {total === 0 ? 0 : offset + 1}–{Math.min(offset + limit, total)} de {total}{" "}
-      </span>
-      <button type="button" disabled={next >= total} onClick={() => onChange(next)}>
+
+      <button
+        type="button"
+        disabled={disabled || offset + limit >= total}
+        onClick={() => onChange(offset + limit)}
+      >
         Siguiente
       </button>
     </nav>
