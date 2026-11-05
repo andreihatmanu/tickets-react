@@ -1,19 +1,33 @@
+import type { Ticket } from "../features/tickets/schemas/ticket.schema";
+import { severityLabels, stateLabels } from "../pages/TicketsPage";
+import { useFormatDate } from "../hooks/utils";
 type TicketRowProps = {
-  ticket: any;
-  onChange: () => void;
+  ticket: Ticket;
+  onChange?: () => void;
 };
-
+const { formatDate } = useFormatDate();
 export function TicketRow({ ticket, onChange }: TicketRowProps) {
   return (
     <tr>
-      <td>{ticket.title ?? ticket.id ?? "Ticket"}</td>
-      <td>{ticket.state ?? "—"}</td>
-      <td>{ticket.targetDate ?? "—"}</td>
+      <td>{ticket.key ?? ticket.id ?? "---"}</td>
+      <td>{ticket.asset ?? "---"}</td>
+      <td>{ticket.assignedTeam ?? "---"}</td>
+      <td>{ticket.assignee ?? "---"}</td>
+      <td>{ticket.state ? stateLabels[ticket.state as keyof typeof stateLabels] : ticket.state}</td>
       <td>
-        <button type="button" onClick={onChange}>
-          Actualizar
-        </button>
+        {ticket.severity
+          ? severityLabels[ticket.severity as keyof typeof severityLabels]
+          : ticket.severity}
       </td>
+      <td>{ticket.targetDate ? formatDate(ticket.targetDate) : "—"}</td>
+      {onChange && (
+        <td>
+          <button type="button" onClick={onChange}>
+            Actualizar
+          </button>
+        </td>
+      )}
+      {!onChange && <td>—</td>}
     </tr>
   );
 }

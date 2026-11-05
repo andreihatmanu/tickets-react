@@ -7,16 +7,25 @@ import { Spinner } from "../components/Spinner";
 import { TicketRow } from "../components/TicketRow";
 
 import type { Ticket } from "../features/tickets/schemas/ticket.schema";
-import { TicketState } from "../features/tickets/schemas/ticket.schema";
+import { Ticket as TypeTicket, TicketState } from "../features/tickets/schemas/ticket.schema";
+
+import { mockTickets } from "../features/tickets/mocks/tickets.mock";
 
 import { useDebounce } from "../hooks/useDebounce";
 import { notify as n } from "../hooks/notify";
 
-const stateLabels: Record<z.infer<typeof TicketState>, string> = {
+export const stateLabels: Record<z.infer<typeof TicketState>, string> = {
   REPORTED: "Reportado",
   IN_PROGRESS: "En curso",
   PENDING_SECURITY: "Pendiente de seguridad",
   DONE: "Hecho"
+};
+
+export const severityLabels: Record<string, string> = {
+  CRITICAL: "Crítico",
+  HIGH: "Alto",
+  MEDIUM: "Medio",
+  LOW: "Bajo"
 };
 
 export function TicketsPage() {
@@ -24,6 +33,7 @@ export function TicketsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usingMocks, setUsingMocks] = useState(false);
 
   // Search input state
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,7 +46,8 @@ export function TicketsPage() {
 
   const stateParam = searchParams.get("state");
   const parsedState = TicketState.safeParse(stateParam);
-  const state = parsedState.success ? parsedState.data : "ALL";
+
+  const state: z.infer<typeof TicketState> | "ALL" = parsedState.success ? parsedState.data : "ALL";
 
   useEffect(() => {
     setSearchInput(queryFromUrl);
@@ -68,23 +79,25 @@ export function TicketsPage() {
         });
 
         if (!response.ok) {
-          throw new Error(`Error al cargar tickets (${response.status})`);
+          throw new Error(`Error HTTP: ${response.status}`);
         }
 
         const body = await response.json();
 
-        setTickets(body.data);
+        const parsedTickets = z.array(TypeTicket).parse(body.data);
+
+        setTickets(parsedTickets);
         setTotal(body.pagination.totalElements);
+        setUsingMocks(false);
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
           return;
         }
-        const message = "No se han podido cargar los tickets.";
 
-        setTickets([]);
-        setTotal(0);
-        setError(message);
-        n.error(message);
+        setTickets(mockTickets);
+        setTotal(mockTickets.length);
+        setUsingMocks(true);
+        n.info("Mostrando datos de demostración debido a un error al obtener los tickets.");
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -116,42 +129,67 @@ export function TicketsPage() {
 
   return (
     <div>
-      <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+      <input
+        type="search"
+        value={searchInput}
+        onChange={(event) => setSearchInput(event.target.value)}
+        placeholder="Buscar tickets..."
+      />
 
-      <select value={state} onChange={(e) => changeState(e.target.value)}>
+      <select id="state" value={state} onChange={(event) => changeState(event.target.value)}>
         <option value="ALL">Todos</option>
 
-        {TicketState.options.map((option) => (
+        {Object.keys(stateLabels).map((option) => (
           <option key={option} value={option}>
-            {stateLabels[option]}
+            {stateLabels[option as z.infer<typeof TicketState>]}
           </option>
         ))}
       </select>
+
+      {usingMocks && <p role="status">Mostrando datos de demostración.</p>}
 
       {loading && <Spinner />}
 
       {error && <p role="alert">{error}</p>}
 
-      {!loading && !error && <p>{expired.length} tickets caducados</p>}
+      {!loading && (
+        <>
+          <p>{expired.length} tickets caducados</p>
 
-      <table>
-        <tbody>
-          {tickets.map((ticket) => (
-            <TicketRow key={ticket.id} ticket={ticket} onChange={() => setTickets([...tickets])} />
-          ))}
-        </tbody>
-      </table>
+          <table>
+            <tr>
+            <th scope="col">Clave</th>
+            <th scope="col">Asset</th>
+            <th scope="col">Equipo asignado</th>
+            <th scope="col">Responsable</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Severidad</th>
+            <th scope="col">Fecha objetivo</th>
+            <th scope="col">Acciones</th>
+          </tr>
+            <tbody>
+              {tickets.map((ticket) => (
+                <TicketRow
+                  key={ticket.id}
+                  ticket={ticket}
+                  //onChange={() => setTickets([...tickets])}
+                />
+              ))}
+            </tbody>
+          </table>
 
-      <Pagination
-        total={total}
-        offset={offset}
-        limit={limit}
-        onChange={(o: number) => {
-          const params = new URLSearchParams(searchParams);
-          params.set("offset", String(o));
-          setSearchParams(params);
-        }}
-      />
+          <Pagination
+            total={total}
+            offset={offset}
+            limit={limit}
+            onChange={(newOffset: number) => {
+              const params = new URLSearchParams(searchParams);
+              params.set("offset", String(newOffset));
+              setSearchParams(params);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -1,0 +1,547 @@
+openapi: 3.0.3
+info:
+  title: Tickets API
+  version: 1.0.0
+  description: Contrato provisional para tickets y usuario autenticado.
+servers:
+  - url: https://api.example.com
+    description: Servidor HTTPS principal
+security:
+  - bearerAuth: []
+tags:
+  - name: Tickets
+    description: Consulta y actualización de tickets.
+  - name: Users
+    description: Información del usuario autenticado.
+paths:
+  /api/v1/tickets:
+    get:
+      operationId: listTickets
+      tags: [Tickets]
+      summary: Listar tickets
+      description: Devuelve una página de tickets aplicando filtros y ordenación.
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Query'
+        - $ref: '#/components/parameters/State'
+        - $ref: '#/components/parameters/Severity'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Direction'
+      responses:
+        '200':
+          description: Página de tickets obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPage'
+              example:
+                data:
+                  - id: tk-01842
+                    key: SEC-1842
+                    asset: srv-payments-01
+                    assignedTeam: security-platform
+                    assignee: ana.garcia@example.com
+                    severity: HIGH
+                    state: IN_PROGRESS
+                    targetDate: '2026-11-15T10:00:00Z'
+                    dueDate: '2026-11-16T10:00:00Z'
+                    lastModified: '2026-11-05T09:30:00Z'
+                pagination:
+                  offset: 0
+                  limit: 20
+                  totalElements: 134
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/tickets/{id}:
+    patch:
+      operationId: updateTicketDueDate
+      tags: [Tickets]
+      summary: Actualizar la fecha límite de un ticket
+      description: Actualiza dueDate. Si el ticket está REPORTED pasa automáticamente a IN_PROGRESS. Los tickets DONE no admiten modificaciones.
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        description: Nueva fecha límite del ticket.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTicketRequest'
+            example:
+              dueDate: '2026-11-15T10:00:00Z'
+      responses:
+        '200':
+          description: Ticket actualizado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+              example:
+                id: tk-01842
+                key: SEC-1842
+                asset: srv-payments-01
+                assignedTeam: security-platform
+                assignee: ana.garcia@example.com
+                severity: HIGH
+                state: IN_PROGRESS
+                targetDate: '2026-11-15T10:00:00Z'
+                dueDate: '2026-11-15T10:00:00Z'
+                lastModified: '2026-11-05T10:15:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/me:
+    get:
+      operationId: getCurrentUser
+      tags: [Users]
+      summary: Obtener el usuario autenticado
+      description: Devuelve la identidad y los permisos efectivos del usuario autenticado.
+      responses:
+        '200':
+          description: Usuario autenticado obtenido correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+              example:
+                id: usr-00421
+                email: ana.garcia@example.com
+                displayName: Ana García
+                permissions: [tickets.read, tickets.update]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT enviado en el encabezado Authorization.
+  parameters:
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Número de elementos omitidos antes de la página.
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 2147483647
+        default: 0
+      example: 0
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Número máximo de tickets devueltos en la página.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+    Query:
+      name: q
+      in: query
+      required: false
+      description: Texto libre para buscar tickets.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 200
+        default: ''
+      example: log4j
+    State:
+      name: state
+      in: query
+      required: false
+      description: Estado por el que se filtran los tickets.
+      schema:
+        $ref: '#/components/schemas/TicketState'
+      example: IN_PROGRESS
+    Severity:
+      name: severity
+      in: query
+      required: false
+      description: Severidad por la que se filtran los tickets.
+      schema:
+        $ref: '#/components/schemas/TicketSeverity'
+      example: HIGH
+    Sort:
+      name: sort
+      in: query
+      required: false
+      description: Campo utilizado para ordenar los tickets.
+      schema:
+        type: string
+        enum: [TARGET_DATE, LAST_MODIFIED, SEVERITY]
+        default: TARGET_DATE
+      example: TARGET_DATE
+    Direction:
+      name: direction
+      in: query
+      required: false
+      description: Dirección de ordenación de los resultados.
+      schema:
+        type: string
+        enum: [ASC, DESC]
+        default: ASC
+      example: ASC
+    TicketId:
+      name: id
+      in: path
+      required: true
+      description: Identificador único del ticket que se actualizará.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: '^[A-Za-z0-9-]+$'
+      example: tk-01842
+  schemas:
+    TicketState:
+      type: string
+      description: Estado posible de un ticket.
+      enum: [REPORTED, IN_PROGRESS, PENDING_SECURITY, DONE]
+      example: IN_PROGRESS
+    TicketSeverity:
+      type: string
+      description: Nivel de severidad de un ticket.
+      enum: [CRITICAL, HIGH, MEDIUM, LOW]
+      example: HIGH
+    Ticket:
+      type: object
+      description: Información completa de un ticket.
+      required: [id, key, asset, assignedTeam, assignee, severity, state, targetDate, dueDate, lastModified]
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[A-Za-z0-9-]+$'
+          description: Identificador único del ticket.
+          example: tk-01842
+        key:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: '^[A-Z][A-Z0-9]+-[0-9]+$'
+          description: Clave legible del ticket.
+          example: SEC-1842
+        asset:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Activo afectado por el ticket.
+          example: srv-payments-01
+        assignedTeam:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 100
+          description: Equipo asignado o null si no está asignado.
+          example: security-platform
+        assignee:
+          type: string
+          format: email
+          maxLength: 254
+          description: Correo de la persona asignada al ticket.
+          example: ana.garcia@example.com
+        severity:
+          $ref: '#/components/schemas/TicketSeverity'
+        state:
+          $ref: '#/components/schemas/TicketState'
+        targetDate:
+          type: string
+          format: date-time
+          description: Fecha objetivo original en formato RFC 3339.
+          example: '2026-11-15T10:00:00Z'
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha límite vigente en formato RFC 3339, o null si no está definida.
+          example: '2026-11-16T10:00:00Z'
+        lastModified:
+          type: string
+          format: date-time
+          description: Fecha de última modificación en formato RFC 3339.
+          example: '2026-11-05T09:30:00Z'
+      example:
+        id: tk-01842
+        key: SEC-1842
+        asset: srv-payments-01
+        assignedTeam: security-platform
+        assignee: ana.garcia@example.com
+        severity: HIGH
+        state: IN_PROGRESS
+        targetDate: '2026-11-15T10:00:00Z'
+        dueDate: '2026-11-16T10:00:00Z'
+        lastModified: '2026-11-05T09:30:00Z'
+    TicketPage:
+      type: object
+      description: Resultado paginado de una consulta de tickets.
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          description: Tickets incluidos en la página actual.
+          items:
+            $ref: '#/components/schemas/Ticket'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      example:
+        data:
+          - id: tk-01842
+            key: SEC-1842
+            asset: srv-payments-01
+            assignedTeam: security-platform
+            assignee: ana.garcia@example.com
+            severity: HIGH
+            state: IN_PROGRESS
+            targetDate: '2026-11-15T10:00:00Z'
+            dueDate: '2026-11-16T10:00:00Z'
+            lastModified: '2026-11-05T09:30:00Z'
+        pagination:
+          offset: 0
+          limit: 20
+          totalElements: 134
+    Pagination:
+      type: object
+      description: Metadatos de paginación.
+      required: [offset, limit, totalElements]
+      properties:
+        offset:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          description: Número de elementos omitidos.
+          example: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Máximo de elementos por página.
+          example: 20
+        totalElements:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          description: Número total de resultados coincidentes.
+          example: 134
+      example:
+        offset: 0
+        limit: 20
+        totalElements: 134
+    UpdateTicketRequest:
+      type: object
+      description: Datos permitidos para actualizar la fecha límite de un ticket.
+      additionalProperties: false
+      required: [dueDate]
+      properties:
+        dueDate:
+          type: string
+          format: date-time
+          description: Nueva fecha límite en formato RFC 3339.
+          example: '2026-11-15T10:00:00Z'
+      example:
+        dueDate: '2026-11-15T10:00:00Z'
+    CurrentUser:
+      type: object
+      description: Identidad y permisos del usuario autenticado.
+      required: [id, email, displayName, permissions]
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[A-Za-z0-9-]+$'
+          description: Identificador único del usuario.
+          example: usr-00421
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Correo electrónico del usuario.
+          example: ana.garcia@example.com
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Nombre visible del usuario.
+          example: Ana García
+        permissions:
+          type: array
+          maxItems: 100
+          description: Permisos efectivos concedidos al usuario.
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+            pattern: '^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$'
+            description: Identificador de un permiso.
+            example: tickets.update
+      example:
+        id: usr-00421
+        email: ana.garcia@example.com
+        displayName: Ana García
+        permissions: [tickets.read, tickets.update]
+    Problem:
+      type: object
+      description: Problem Details para HTTP APIs conforme a RFC 9457.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: URI que identifica el tipo de problema.
+          example: https://api.example.com/problems/validation-error
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Resumen breve del problema.
+          example: Unprocessable Content
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+          description: Código HTTP de esta ocurrencia.
+          example: 422
+        detail:
+          type: string
+          maxLength: 2000
+          description: Explicación específica del problema.
+          example: El parámetro limit debe estar entre 1 y 100.
+        instance:
+          type: string
+          format: uri-reference
+          maxLength: 2048
+          description: URI que identifica esta ocurrencia concreta.
+          example: /api/v1/tickets?limit=200
+        code:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '^[A-Z][A-Z0-9_]+$'
+          description: Código de error estable específico de la API.
+          example: INVALID_PARAMETER
+      example:
+        type: https://api.example.com/problems/validation-error
+        title: Unprocessable Content
+        status: 422
+        detail: El parámetro limit debe estar entre 1 y 100.
+        instance: /api/v1/tickets?limit=200
+        code: INVALID_PARAMETER
+  responses:
+    BadRequest:
+      description: La petición está mal formada.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.example.com/problems/bad-request
+            title: Bad Request
+            status: 400
+            detail: El cuerpo JSON no es válido.
+            instance: /api/v1/tickets/tk-01842
+            code: BAD_REQUEST
+    Unauthorized:
+      description: Falta autenticación o el token no es válido.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.example.com/problems/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: Se requiere un token bearer válido.
+            instance: /api/v1/tickets
+            code: UNAUTHORIZED
+    Forbidden:
+      description: El usuario no tiene el permiso requerido.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.example.com/problems/forbidden
+            title: Forbidden
+            status: 403
+            detail: Se requiere el permiso tickets.update.
+            instance: /api/v1/tickets/tk-01842
+            code: FORBIDDEN
+    NotFound:
+      description: No existe el ticket solicitado.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.example.com/problems/not-found
+            title: Not Found
+            status: 404
+            detail: No se encontró el ticket solicitado.
+            instance: /api/v1/tickets/tk-01842
+            code: TICKET_NOT_FOUND
+    Conflict:
+      description: El ticket está en estado DONE y no admite modificaciones.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.example.com/problems/conflict
+            title: Conflict
+            status: 409
+            detail: No se puede modificar un ticket en estado DONE.
+            instance: /api/v1/tickets/tk-01842
+            code: TICKET_ALREADY_DONE
+    UnprocessableContent:
+      description: Los parámetros o campos no cumplen las reglas de validación.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.example.com/problems/validation-error
+            title: Unprocessable Content
+            status: 422
+            detail: El parámetro limit debe estar entre 1 y 100.
+            instance: /api/v1/tickets?limit=200
+            code: INVALID_PARAMETER
+    InternalServerError:
+      description: Error inesperado al procesar la petición.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.example.com/problems/internal-server-error
+            title: Internal Server Error
+            status: 500
+            detail: Se ha producido un error inesperado.
+            instance: /api/v1/tickets
+            code: INTERNAL_ERROR
