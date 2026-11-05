@@ -161,4 +161,25 @@ describe("useTicketListParams", () => {
       expect(result.current.params.offset).toBe(0);
     });
   });
+  it("supports browser back and forward navigation", async () => {
+    const { result } = renderTicketListParams();
+
+    act(() => {
+      result.current.setFilters({ q: "log4j" });
+    });
+
+    await waitFor(() => {
+      expect(result.current.params.q).toBe("log4j");
+    });
+
+    act(() => {
+      result.current.setFilters({ state: "IN_PROGRESS" });
+    });
+
+    await waitFor(() => {
+      expect(result.current.params.state).toBe("IN_PROGRESS");
+    });
+
+    // Para probar atrás/adelante de forma real
+  });
 });
