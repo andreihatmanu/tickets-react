@@ -1,173 +1,209 @@
-import { useEffect, useState, useRef } from "react";
-import { z } from "zod";
+import { useEffect, useRef, useState } from "react";
 
 import { Pagination } from "../components/Pagination";
 import { Spinner } from "../components/Spinner";
 import { TicketRow } from "../components/TicketRow";
 
+import { getMockTicketPage } from "../features/tickets/mocks/ticket-list";
+import { severityLabels, stateLabels } from "../features/tickets/ticket-labels";
 import type { Ticket } from "../features/tickets/schemas/ticket.schema";
-import { Ticket as TicketSchema, TicketState } from "../features/tickets/schemas/ticket.schema";
-
-import { mockTickets } from "../features/tickets/mocks/tickets.mock";
-
-import { useDebounce } from "../hooks/useDebounce";
-import { useTicketListParams } from "../hooks/useTicketListParams";
-import { notify as n } from "../hooks/notify";
 import { getTickets } from "../features/tickets/services/ticket.service";
 
-export const stateLabels: Record<z.infer<typeof TicketState>, string> = {
-  REPORTED: "Reportado",
-  IN_PROGRESS: "En curso",
-  PENDING_SECURITY: "Pendiente de seguridad",
-  DONE: "Hecho"
-};
-
-export const severityLabels: Record<string, string> = {
-  CRITICAL: "Crítico",
-  HIGH: "Alto",
-  MEDIUM: "Medio",
-  LOW: "Bajo"
-};
+import { useDebounce } from "../hooks/useDebounce";
+import { notify } from "../hooks/notify";
+import { useTicketListParams } from "../hooks/useTicketListParams";
 
 export function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [usingMockData, setUsingMockData] = useState(false);
   const hasNotifiedMocks = useRef(false);
 
-  // URL parameters
   const { params, setPage, setFilters } = useTicketListParams();
   const { offset, limit, state, severity, sort, direction, q } = params;
 
-  // Search input
   const [searchInput, setSearchInput] = useState(q);
   const debouncedSearch = useDebounce(searchInput);
+  const lastUrlQuery = useRef(q);
+  const skipNextDebouncedUpdate = useRef(false);
 
-  // Synchronize search input with URL navigation (back/forward)
+  // Keep the input synchronized when the user navigates with browser back/forward.
   useEffect(() => {
-    setSearchInput(q);
+    if (q !== lastUrlQuery.current) {
+      lastUrlQuery.current = q;
+      skipNextDebouncedUpdate.current = true;
+      setSearchInput(q);
+    }
   }, [q]);
 
-  // Update URL after debounce
+  // Debounce belongs at the UI boundary: URL changes (and API requests) happen after typing pauses.
   useEffect(() => {
-    if (debouncedSearch.trim() !== q) {
-      setFilters({ q: debouncedSearch.trim() });
+    if (skipNextDebouncedUpdate.current) {
+      skipNextDebouncedUpdate.current = false;
+      return;
     }
+
+    const normalizedSearch = debouncedSearch.trim();
+    if (normalizedSearch !== q) setFilters({ q: normalizedSearch });
   }, [debouncedSearch, q, setFilters]);
 
-  // Load tickets
   useEffect(() => {
     const controller = new AbortController();
 
-    const loadTickets = async () => {
+    async function loadTickets() {
       setLoading(true);
 
       try {
-        const response = await getTickets(
-          {
-            offset,
-            limit,
-            q,
-            state,
-            severity,
-            sort,
-            direction
-          },
-          controller.signal
-        );
+        const response = await getTickets(params, controller.signal);
+        if (controller.signal.aborted) return;
 
         setTickets(response.data);
         setTotal(response.pagination.totalElements);
+        setUsingMockData(false);
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
+        if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
           return;
         }
 
-        setTickets(mockTickets);
-        setTotal(mockTickets.length);
+        const mockPage = getMockTicketPage(params);
+        setTickets(mockPage.data);
+        setTotal(mockPage.total);
+        setUsingMockData(true);
 
         if (!hasNotifiedMocks.current) {
-          n.warning("Mostrando datos de demostración debido a un error al obtener los tickets.");
+          notify.warning("No se pudo conectar con la API. Se muestran datos de demostración.");
           hasNotifiedMocks.current = true;
         }
       } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setLoading(false);
       }
-    };
+    }
 
     void loadTickets();
-
     return () => controller.abort();
   }, [offset, limit, state, severity, sort, direction, q]);
 
-  // Expired tickets
-  const now = Date.now();
-  const expired = tickets.filter((ticket) => new Date(ticket.targetDate).getTime() < now);
+  const expired = tickets.filter((ticket) => new Date(ticket.targetDate).getTime() < Date.now());
 
   return (
-    <div>
-      <input
-        type="search"
-        value={searchInput}
-        onChange={(event) => setSearchInput(event.target.value)}
-        placeholder="Buscar tickets..."
-      />
+    <main>
+      <h1>Tickets de seguridad</h1>
 
-      <select
-        id="state"
-        value={state}
-        onChange={(event) =>
-          setFilters({
-            state: event.target.value as typeof state
-          })
-        }
-      >
-        <option value="ALL">Todos</option>
-
-        {Object.keys(stateLabels).map((option) => (
-          <option key={option} value={option}>
-            {stateLabels[option as z.infer<typeof TicketState>]}
-          </option>
-        ))}
-      </select>
-
-      {loading && <Spinner />}
-
-      {!loading && (
-        <>
-          <p>{expired.length} tickets caducados</p>
-
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Clave</th>
-                <th scope="col">Asset</th>
-                <th scope="col">Equipo asignado</th>
-                <th scope="col">Responsable</th>
-                <th scope="col">Estado</th>
-                <th scope="col">Severidad</th>
-                <th scope="col">Fecha objetivo</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {tickets.map((ticket) => (
-                <TicketRow key={ticket.id} ticket={ticket} />
-              ))}
-            </tbody>
-          </table>
-
-          <Pagination
-            total={total}
-            offset={offset}
-            limit={limit}
-            disabled={loading}
-            onChange={setPage}
+      <section className="filters" aria-label="Filtros de tickets">
+        <div className="filter-field">
+          <label htmlFor="ticket-search">Buscar</label>
+          <input
+            id="ticket-search"
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Clave, activo, equipo o responsable"
           />
-        </>
+        </div>
+
+        <div className="filter-field">
+          <label htmlFor="ticket-state">Estado</label>
+          <select
+            id="ticket-state"
+            value={state}
+            onChange={(event) => setFilters({ state: event.target.value as typeof state })}
+          >
+            <option value="ALL">Todos</option>
+            {Object.entries(stateLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-field">
+          <label htmlFor="ticket-severity">Severidad</label>
+          <select
+            id="ticket-severity"
+            value={severity}
+            onChange={(event) => setFilters({ severity: event.target.value as typeof severity })}
+          >
+            <option value="ALL">Todas</option>
+            {Object.entries(severityLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-field">
+          <label htmlFor="ticket-sort">Ordenar por</label>
+          <select
+            id="ticket-sort"
+            value={sort}
+            onChange={(event) => setFilters({ sort: event.target.value as typeof sort })}
+          >
+            <option value="LAST_MODIFIED">Última modificación</option>
+            <option value="TARGET_DATE">Fecha objetivo</option>
+            <option value="SEVERITY">Severidad</option>
+          </select>
+        </div>
+
+        <div className="filter-field">
+          <label htmlFor="ticket-direction">Dirección</label>
+          <select
+            id="ticket-direction"
+            value={direction}
+            onChange={(event) => setFilters({ direction: event.target.value as typeof direction })}
+          >
+            <option value="DESC">Descendente</option>
+            <option value="ASC">Ascendente</option>
+          </select>
+        </div>
+      </section>
+
+      {usingMockData && (
+        <p className="demo-notice" role="status">
+          Estás viendo datos de demostración; pueden no reflejar el estado real del sistema.
+        </p>
       )}
-    </div>
+
+      {loading && <Spinner label="Actualizando tickets..." size="small" />}
+
+      <p aria-live="polite">{expired.length} tickets caducados en esta página</p>
+
+      <div className="table-container" aria-busy={loading}>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Clave</th>
+              <th scope="col">Activo</th>
+              <th scope="col">Equipo asignado</th>
+              <th scope="col">Responsable</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Severidad</th>
+              <th scope="col">Fecha objetivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tickets.map((ticket) => (
+              <TicketRow key={ticket.id} ticket={ticket} />
+            ))}
+          </tbody>
+        </table>
+
+        {!loading && tickets.length === 0 && (
+          <p className="empty-state" role="status">
+            No se han encontrado tickets con estos filtros.
+          </p>
+        )}
+      </div>
+
+      <Pagination
+        total={total}
+        offset={offset}
+        limit={limit}
+        disabled={loading}
+        onChange={setPage}
+      />
+    </main>
   );
 }

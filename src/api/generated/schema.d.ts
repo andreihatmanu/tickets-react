@@ -4,252 +4,439 @@
  */
 
 export interface paths {
-    "/api/v1/tickets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Listar tickets
-         * @description Devuelve una página de tickets aplicando filtros y ordenación.
-         */
-        get: operations["listTickets"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/api/v1/tickets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/tickets/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Actualizar la fecha límite de un ticket
-         * @description Actualiza dueDate. Si el ticket está REPORTED pasa automáticamente a IN_PROGRESS. Los tickets DONE no admiten modificaciones.
-         */
-        patch: operations["updateTicketDueDate"];
-        trace?: never;
+    /**
+     * Listar tickets
+     * @description Devuelve una página de tickets aplicando filtros y ordenación.
+     */
+    get: operations["listTickets"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tickets/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Obtener el usuario autenticado
-         * @description Devuelve la identidad y los permisos efectivos del usuario autenticado.
-         */
-        get: operations["getCurrentUser"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Actualizar la fecha límite de un ticket
+     * @description Actualiza dueDate. Si el ticket está REPORTED pasa automáticamente a IN_PROGRESS. Los tickets DONE no admiten modificaciones.
+     */
+    patch: operations["updateTicketDueDate"];
+    trace?: never;
+  };
+  "/api/v1/me": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    /**
+     * Obtener el usuario autenticado
+     * @description Devuelve la identidad y los permisos efectivos del usuario autenticado.
+     */
+    get: operations["getCurrentUser"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
+  schemas: {
+    /**
+     * @description Estado posible de un ticket.
+     * @example IN_PROGRESS
+     * @enum {string}
+     */
+    TicketState: "REPORTED" | "IN_PROGRESS" | "PENDING_SECURITY" | "DONE";
+    /**
+     * @description Nivel de severidad de un ticket.
+     * @example HIGH
+     * @enum {string}
+     */
+    TicketSeverity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+    /**
+     * @description Información completa de un ticket.
+     * @example {
+     *       "id": "tk-01842",
+     *       "key": "SEC-1842",
+     *       "asset": "srv-payments-01",
+     *       "assignedTeam": "security-platform",
+     *       "assignee": "ana.garcia@example.com",
+     *       "severity": "HIGH",
+     *       "state": "IN_PROGRESS",
+     *       "targetDate": "2026-11-15T10:00:00Z",
+     *       "dueDate": "2026-11-16T10:00:00Z",
+     *       "lastModified": "2026-11-05T09:30:00Z"
+     *     }
+     */
+    Ticket: {
+      /**
+       * @description Identificador único del ticket.
+       * @example tk-01842
+       */
+      id: string;
+      /**
+       * @description Clave legible del ticket.
+       * @example SEC-1842
+       */
+      key: string;
+      /**
+       * @description Activo afectado por el ticket; usa el literal None cuando el activo sea desconocido.
+       * @example payments-api
+       */
+      asset: string;
+      /**
+       * @description Equipo asignado o null si no está asignado.
+       * @example security-platform
+       */
+      assignedTeam: string | null;
+      /**
+       * Format: email
+       * @description Correo de la persona asignada al ticket.
+       * @example ana.garcia@example.com
+       */
+      assignee: string;
+      /**
+       * @description Nivel de severidad del ticket.
+       * @example HIGH
+       */
+      severity: components["schemas"]["TicketSeverity"];
+      /**
+       * @description Estado actual del ticket.
+       * @example IN_PROGRESS
+       */
+      state: components["schemas"]["TicketState"];
+      /**
+       * Format: date-time
+       * @description Fecha objetivo original en formato RFC 3339.
+       * @example 2026-11-15T10:00:00Z
+       */
+      targetDate: string;
+      /**
+       * Format: date-time
+       * @description Fecha límite vigente en formato RFC 3339, o null si no está definida.
+       * @example 2026-11-16T10:00:00Z
+       */
+      dueDate: string | null;
+      /**
+       * Format: date-time
+       * @description Fecha de última modificación en formato RFC 3339.
+       * @example 2026-11-05T09:30:00Z
+       */
+      lastModified: string;
+    };
+    /**
+     * @description Resultado paginado de una consulta de tickets.
+     * @example {
+     *       "data": [
+     *         {
+     *           "id": "tk-01842",
+     *           "key": "SEC-1842",
+     *           "asset": "srv-payments-01",
+     *           "assignedTeam": "security-platform",
+     *           "assignee": "ana.garcia@example.com",
+     *           "severity": "HIGH",
+     *           "state": "IN_PROGRESS",
+     *           "targetDate": "2026-11-15T10:00:00Z",
+     *           "dueDate": "2026-11-16T10:00:00Z",
+     *           "lastModified": "2026-11-05T09:30:00Z"
+     *         }
+     *       ],
+     *       "pagination": {
+     *         "offset": 0,
+     *         "limit": 20,
+     *         "totalElements": 134
+     *       }
+     *     }
+     */
+    TicketPage: {
+      /**
+       * @description Tickets incluidos en la página actual.
+       * @example [
+       *       {
+       *         "id": "tk-01842",
+       *         "key": "SEC-1842",
+       *         "asset": "payments-api",
+       *         "assignedTeam": "security-platform",
+       *         "assignee": "ana.garcia@example.com",
+       *         "severity": "HIGH",
+       *         "state": "IN_PROGRESS",
+       *         "targetDate": "2026-11-15T10:00:00Z",
+       *         "dueDate": "2026-11-16T10:00:00Z",
+       *         "lastModified": "2026-11-05T09:30:00Z"
+       *       }
+       *     ]
+       */
+      data: components["schemas"]["Ticket"][];
+      /**
+       * @description Metadatos de paginación de la respuesta.
+       * @example {
+       *       "offset": 0,
+       *       "limit": 20,
+       *       "totalElements": 134
+       *     }
+       */
+      pagination: components["schemas"]["Pagination"];
+    };
+    /**
+     * @description Campo por el que ordenar los tickets.
+     * @default LAST_MODIFIED
+     * @example LAST_MODIFIED
+     * @enum {string}
+     */
+    TicketSort: "TARGET_DATE" | "LAST_MODIFIED" | "SEVERITY";
+    /**
+     * @description Metadatos de paginación.
+     * @example {
+     *       "offset": 0,
+     *       "limit": 20,
+     *       "totalElements": 134
+     *     }
+     */
+    Pagination: {
+      /**
+       * @description Número de elementos omitidos.
+       * @example 0
+       */
+      offset: number;
+      /**
+       * @description Máximo de elementos por página.
+       * @example 20
+       */
+      limit: number;
+      /**
+       * @description Número total de resultados coincidentes.
+       * @example 134
+       */
+      totalElements: number;
+    };
+    /**
+     * @description Datos permitidos para actualizar la fecha límite de un ticket.
+     * @example {
+     *       "dueDate": "2026-11-15T10:00:00Z"
+     *     }
+     */
+    UpdateTicketRequest: {
+      /**
+       * Format: date-time
+       * @description Nueva fecha límite en formato RFC 3339.
+       * @example 2026-11-15T10:00:00Z
+       */
+      dueDate: string;
+    };
+    /**
+     * @description Identidad y permisos del usuario autenticado.
+     * @example {
+     *       "id": "usr-00421",
+     *       "email": "ana.garcia@example.com",
+     *       "displayName": "Ana García",
+     *       "permissions": [
+     *         "tickets.read",
+     *         "tickets.update"
+     *       ]
+     *     }
+     */
+    CurrentUser: {
+      /**
+       * @description Identificador único del usuario.
+       * @example usr-00421
+       */
+      id: string;
+      /**
+       * Format: email
+       * @description Correo electrónico del usuario.
+       * @example ana.garcia@example.com
+       */
+      email: string;
+      /**
+       * @description Nombre visible del usuario.
+       * @example Ana García
+       */
+      displayName: string;
+      /**
+       * @description Permisos efectivos concedidos al usuario.
+       * @example [
+       *       "tickets.read",
+       *       "tickets.update"
+       *     ]
+       */
+      permissions: string[];
+    };
+    /**
+     * @description Problem Details para HTTP APIs conforme a RFC 9457.
+     * @example {
+     *       "type": "https://api.example.com/problems/validation-error",
+     *       "title": "Unprocessable Content",
+     *       "status": 422,
+     *       "detail": "El parámetro limit debe estar entre 1 y 100.",
+     *       "instance": "/api/v1/tickets?limit=200",
+     *       "code": "INVALID_PARAMETER"
+     *     }
+     */
+    Problem: {
+      /**
+       * Format: uri
+       * @description URI que identifica el tipo de problema.
+       * @example https://api.example.com/problems/validation-error
+       */
+      type: string;
+      /**
+       * @description Resumen breve del problema.
+       * @example Unprocessable Content
+       */
+      title: string;
+      /**
+       * @description Código HTTP de esta ocurrencia.
+       * @example 422
+       */
+      status: number;
+      /**
+       * @description Explicación específica del problema.
+       * @example El parámetro limit debe estar entre 1 y 100.
+       */
+      detail?: string;
+      /**
+       * Format: uri-reference
+       * @description URI que identifica esta ocurrencia concreta.
+       * @example /api/v1/tickets?limit=200
+       */
+      instance?: string;
+      /**
+       * @description Código de error estable específico de la API.
+       * @example INVALID_PARAMETER
+       */
+      code?: string;
+    };
+  };
+  responses: {
+    /** @description La petición está mal formada. */
+    BadRequest: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
         /**
-         * @description Estado posible de un ticket.
-         * @example IN_PROGRESS
-         * @enum {string}
-         */
-        TicketState: "REPORTED" | "IN_PROGRESS" | "PENDING_SECURITY" | "DONE";
-        /**
-         * @description Nivel de severidad de un ticket.
-         * @example HIGH
-         * @enum {string}
-         */
-        TicketSeverity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
-        /**
-         * @description Información completa de un ticket.
          * @example {
-         *       "id": "tk-01842",
-         *       "key": "SEC-1842",
-         *       "asset": "srv-payments-01",
-         *       "assignedTeam": "security-platform",
-         *       "assignee": "ana.garcia@example.com",
-         *       "severity": "HIGH",
-         *       "state": "IN_PROGRESS",
-         *       "targetDate": "2026-11-15T10:00:00Z",
-         *       "dueDate": "2026-11-16T10:00:00Z",
-         *       "lastModified": "2026-11-05T09:30:00Z"
+         *       "type": "https://api.example.com/problems/bad-request",
+         *       "title": "Bad Request",
+         *       "status": 400,
+         *       "detail": "El cuerpo JSON no es válido.",
+         *       "instance": "/api/v1/tickets/tk-01842",
+         *       "code": "BAD_REQUEST"
          *     }
          */
-        Ticket: {
-            /**
-             * @description Identificador único del ticket.
-             * @example tk-01842
-             */
-            id: string;
-            /**
-             * @description Clave legible del ticket.
-             * @example SEC-1842
-             */
-            key: string;
-            /**
-             * @description Activo afectado por el ticket.
-             * @example srv-payments-01
-             */
-            asset: string;
-            /**
-             * @description Equipo asignado o null si no está asignado.
-             * @example security-platform
-             */
-            assignedTeam: string | null;
-            /**
-             * Format: email
-             * @description Correo de la persona asignada al ticket.
-             * @example ana.garcia@example.com
-             */
-            assignee: string;
-            severity: components["schemas"]["TicketSeverity"];
-            state: components["schemas"]["TicketState"];
-            /**
-             * Format: date-time
-             * @description Fecha objetivo original en formato RFC 3339.
-             * @example 2026-11-15T10:00:00Z
-             */
-            targetDate: string;
-            /**
-             * Format: date-time
-             * @description Fecha límite vigente en formato RFC 3339, o null si no está definida.
-             * @example 2026-11-16T10:00:00Z
-             */
-            dueDate: string | null;
-            /**
-             * Format: date-time
-             * @description Fecha de última modificación en formato RFC 3339.
-             * @example 2026-11-05T09:30:00Z
-             */
-            lastModified: string;
-        };
+        "application/problem+json": components["schemas"]["Problem"];
+      };
+    };
+    /** @description Falta autenticación o el token no es válido. */
+    Unauthorized: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
         /**
-         * @description Resultado paginado de una consulta de tickets.
          * @example {
-         *       "data": [
-         *         {
-         *           "id": "tk-01842",
-         *           "key": "SEC-1842",
-         *           "asset": "srv-payments-01",
-         *           "assignedTeam": "security-platform",
-         *           "assignee": "ana.garcia@example.com",
-         *           "severity": "HIGH",
-         *           "state": "IN_PROGRESS",
-         *           "targetDate": "2026-11-15T10:00:00Z",
-         *           "dueDate": "2026-11-16T10:00:00Z",
-         *           "lastModified": "2026-11-05T09:30:00Z"
-         *         }
-         *       ],
-         *       "pagination": {
-         *         "offset": 0,
-         *         "limit": 20,
-         *         "totalElements": 134
-         *       }
+         *       "type": "https://api.example.com/problems/unauthorized",
+         *       "title": "Unauthorized",
+         *       "status": 401,
+         *       "detail": "Se requiere un token bearer válido.",
+         *       "instance": "/api/v1/tickets",
+         *       "code": "UNAUTHORIZED"
          *     }
          */
-        TicketPage: {
-            /** @description Tickets incluidos en la página actual. */
-            data: components["schemas"]["Ticket"][];
-            pagination: components["schemas"]["Pagination"];
-        };
+        "application/problem+json": components["schemas"]["Problem"];
+      };
+    };
+    /** @description El usuario no tiene el permiso requerido. */
+    Forbidden: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
         /**
-         * @description Campo por el que ordenar los tickets.
-         * @enum {string}
-         */
-        TicketSort: "LAST_MODIFIED" | "SEVERITY";
-        /**
-         * @description Metadatos de paginación.
          * @example {
-         *       "offset": 0,
-         *       "limit": 20,
-         *       "totalElements": 134
+         *       "type": "https://api.example.com/problems/forbidden",
+         *       "title": "Forbidden",
+         *       "status": 403,
+         *       "detail": "Se requiere el permiso tickets.update.",
+         *       "instance": "/api/v1/tickets/tk-01842",
+         *       "code": "FORBIDDEN"
          *     }
          */
-        Pagination: {
-            /**
-             * @description Número de elementos omitidos.
-             * @example 0
-             */
-            offset: number;
-            /**
-             * @description Máximo de elementos por página.
-             * @example 20
-             */
-            limit: number;
-            /**
-             * @description Número total de resultados coincidentes.
-             * @example 134
-             */
-            totalElements: number;
-        };
+        "application/problem+json": components["schemas"]["Problem"];
+      };
+    };
+    /** @description No existe el ticket solicitado. */
+    NotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
         /**
-         * @description Datos permitidos para actualizar la fecha límite de un ticket.
          * @example {
-         *       "dueDate": "2026-11-15T10:00:00Z"
+         *       "type": "https://api.example.com/problems/not-found",
+         *       "title": "Not Found",
+         *       "status": 404,
+         *       "detail": "No se encontró el ticket solicitado.",
+         *       "instance": "/api/v1/tickets/tk-01842",
+         *       "code": "TICKET_NOT_FOUND"
          *     }
          */
-        UpdateTicketRequest: {
-            /**
-             * Format: date-time
-             * @description Nueva fecha límite en formato RFC 3339.
-             * @example 2026-11-15T10:00:00Z
-             */
-            dueDate: string;
-        };
+        "application/problem+json": components["schemas"]["Problem"];
+      };
+    };
+    /** @description El ticket está en estado DONE y no admite modificaciones. */
+    Conflict: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
         /**
-         * @description Identidad y permisos del usuario autenticado.
          * @example {
-         *       "id": "usr-00421",
-         *       "email": "ana.garcia@example.com",
-         *       "displayName": "Ana García",
-         *       "permissions": [
-         *         "tickets.read",
-         *         "tickets.update"
-         *       ]
+         *       "type": "https://api.example.com/problems/conflict",
+         *       "title": "Conflict",
+         *       "status": 409,
+         *       "detail": "No se puede modificar un ticket en estado DONE.",
+         *       "instance": "/api/v1/tickets/tk-01842",
+         *       "code": "TICKET_ALREADY_DONE"
          *     }
          */
-        CurrentUser: {
-            /**
-             * @description Identificador único del usuario.
-             * @example usr-00421
-             */
-            id: string;
-            /**
-             * Format: email
-             * @description Correo electrónico del usuario.
-             * @example ana.garcia@example.com
-             */
-            email: string;
-            /**
-             * @description Nombre visible del usuario.
-             * @example Ana García
-             */
-            displayName: string;
-            /** @description Permisos efectivos concedidos al usuario. */
-            permissions: string[];
-        };
+        "application/problem+json": components["schemas"]["Problem"];
+      };
+    };
+    /** @description Los parámetros o campos no cumplen las reglas de validación. */
+    UnprocessableContent: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
         /**
-         * @description Problem Details para HTTP APIs conforme a RFC 9457.
          * @example {
          *       "type": "https://api.example.com/problems/validation-error",
          *       "title": "Unprocessable Content",
@@ -259,394 +446,247 @@ export interface components {
          *       "code": "INVALID_PARAMETER"
          *     }
          */
-        Problem: {
-            /**
-             * Format: uri
-             * @description URI que identifica el tipo de problema.
-             * @example https://api.example.com/problems/validation-error
-             */
-            type: string;
-            /**
-             * @description Resumen breve del problema.
-             * @example Unprocessable Content
-             */
-            title: string;
-            /**
-             * @description Código HTTP de esta ocurrencia.
-             * @example 422
-             */
-            status: number;
-            /**
-             * @description Explicación específica del problema.
-             * @example El parámetro limit debe estar entre 1 y 100.
-             */
-            detail?: string;
-            /**
-             * Format: uri-reference
-             * @description URI que identifica esta ocurrencia concreta.
-             * @example /api/v1/tickets?limit=200
-             */
-            instance?: string;
-            /**
-             * @description Código de error estable específico de la API.
-             * @example INVALID_PARAMETER
-             */
-            code?: string;
-        };
+        "application/problem+json": components["schemas"]["Problem"];
+      };
     };
-    responses: {
-        /** @description La petición está mal formada. */
-        BadRequest: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://api.example.com/problems/bad-request",
-                 *       "title": "Bad Request",
-                 *       "status": 400,
-                 *       "detail": "El cuerpo JSON no es válido.",
-                 *       "instance": "/api/v1/tickets/tk-01842",
-                 *       "code": "BAD_REQUEST"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description Falta autenticación o el token no es válido. */
-        Unauthorized: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://api.example.com/problems/unauthorized",
-                 *       "title": "Unauthorized",
-                 *       "status": 401,
-                 *       "detail": "Se requiere un token bearer válido.",
-                 *       "instance": "/api/v1/tickets",
-                 *       "code": "UNAUTHORIZED"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description El usuario no tiene el permiso requerido. */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://api.example.com/problems/forbidden",
-                 *       "title": "Forbidden",
-                 *       "status": 403,
-                 *       "detail": "Se requiere el permiso tickets.update.",
-                 *       "instance": "/api/v1/tickets/tk-01842",
-                 *       "code": "FORBIDDEN"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description No existe el ticket solicitado. */
-        NotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://api.example.com/problems/not-found",
-                 *       "title": "Not Found",
-                 *       "status": 404,
-                 *       "detail": "No se encontró el ticket solicitado.",
-                 *       "instance": "/api/v1/tickets/tk-01842",
-                 *       "code": "TICKET_NOT_FOUND"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description El ticket está en estado DONE y no admite modificaciones. */
-        Conflict: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://api.example.com/problems/conflict",
-                 *       "title": "Conflict",
-                 *       "status": 409,
-                 *       "detail": "No se puede modificar un ticket en estado DONE.",
-                 *       "instance": "/api/v1/tickets/tk-01842",
-                 *       "code": "TICKET_ALREADY_DONE"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description Los parámetros o campos no cumplen las reglas de validación. */
-        UnprocessableContent: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://api.example.com/problems/validation-error",
-                 *       "title": "Unprocessable Content",
-                 *       "status": 422,
-                 *       "detail": "El parámetro limit debe estar entre 1 y 100.",
-                 *       "instance": "/api/v1/tickets?limit=200",
-                 *       "code": "INVALID_PARAMETER"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description Error inesperado al procesar la petición. */
-        InternalServerError: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://api.example.com/problems/internal-server-error",
-                 *       "title": "Internal Server Error",
-                 *       "status": 500,
-                 *       "detail": "Se ha producido un error inesperado.",
-                 *       "instance": "/api/v1/tickets",
-                 *       "code": "INTERNAL_ERROR"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
+    /** @description Error inesperado al procesar la petición. */
+    InternalServerError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        /**
+         * @example {
+         *       "type": "https://api.example.com/problems/internal-server-error",
+         *       "title": "Internal Server Error",
+         *       "status": 500,
+         *       "detail": "Se ha producido un error inesperado.",
+         *       "instance": "/api/v1/tickets",
+         *       "code": "INTERNAL_ERROR"
+         *     }
+         */
+        "application/problem+json": components["schemas"]["Problem"];
+      };
     };
+  };
+  parameters: {
+    /**
+     * @description Número de elementos omitidos antes de la página.
+     * @example 0
+     */
+    Offset: number;
+    /**
+     * @description Número máximo de tickets devueltos en la página.
+     * @example 20
+     */
+    Limit: number;
+    /**
+     * @description Texto libre para buscar tickets. Una cadena vacía equivale a no aplicar búsqueda.
+     * @example log4j
+     */
+    Query: string;
+    /**
+     * @description Estado por el que se filtran los tickets; ALL omite el filtro.
+     * @example IN_PROGRESS
+     */
+    State: "ALL" | "REPORTED" | "IN_PROGRESS" | "PENDING_SECURITY" | "DONE";
+    /**
+     * @description Severidad por la que se filtran los tickets; ALL omite el filtro.
+     * @example HIGH
+     */
+    Severity: "ALL" | "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+    /**
+     * @description Campo utilizado para ordenar los tickets.
+     * @example TARGET_DATE
+     */
+    Sort: components["schemas"]["TicketSort"];
+    /**
+     * @description Dirección de ordenación de los resultados.
+     * @example DESC
+     */
+    Direction: "ASC" | "DESC";
+    /**
+     * @description Identificador único del ticket que se actualizará.
+     * @example tk-01842
+     */
+    TicketId: string;
+  };
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
+}
+export type $defs = Record<string, never>;
+export interface operations {
+  listTickets: {
     parameters: {
+      query?: {
         /**
          * @description Número de elementos omitidos antes de la página.
          * @example 0
          */
-        Offset: number;
+        offset?: components["parameters"]["Offset"];
         /**
          * @description Número máximo de tickets devueltos en la página.
          * @example 20
          */
-        Limit: number;
+        limit?: components["parameters"]["Limit"];
         /**
-         * @description Texto libre para buscar tickets.
+         * @description Texto libre para buscar tickets. Una cadena vacía equivale a no aplicar búsqueda.
          * @example log4j
          */
-        Query: string;
+        q?: components["parameters"]["Query"];
         /**
-         * @description Estado por el que se filtran los tickets.
+         * @description Estado por el que se filtran los tickets; ALL omite el filtro.
          * @example IN_PROGRESS
          */
-        State: components["schemas"]["TicketState"];
+        state?: components["parameters"]["State"];
         /**
-         * @description Severidad por la que se filtran los tickets.
+         * @description Severidad por la que se filtran los tickets; ALL omite el filtro.
          * @example HIGH
          */
-        Severity: components["schemas"]["TicketSeverity"];
+        severity?: components["parameters"]["Severity"];
         /**
          * @description Campo utilizado para ordenar los tickets.
-         * @example LAST_MODIFIED
+         * @example TARGET_DATE
          */
-        Sort: components["schemas"]["TicketSort"];
+        sort?: components["parameters"]["Sort"];
         /**
          * @description Dirección de ordenación de los resultados.
-         * @example ASC
+         * @example DESC
          */
-        Direction: "ASC" | "DESC";
+        direction?: components["parameters"]["Direction"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Página de tickets obtenida correctamente. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /**
+           * @example {
+           *       "data": [
+           *         {
+           *           "id": "tk-01842",
+           *           "key": "SEC-1842",
+           *           "asset": "srv-payments-01",
+           *           "assignedTeam": "security-platform",
+           *           "assignee": "ana.garcia@example.com",
+           *           "severity": "HIGH",
+           *           "state": "IN_PROGRESS",
+           *           "targetDate": "2026-11-15T10:00:00Z",
+           *           "dueDate": "2026-11-16T10:00:00Z",
+           *           "lastModified": "2026-11-05T09:30:00Z"
+           *         }
+           *       ],
+           *       "pagination": {
+           *         "offset": 0,
+           *         "limit": 20,
+           *         "totalElements": 134
+           *       }
+           *     }
+           */
+          "application/json": components["schemas"]["TicketPage"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      422: components["responses"]["UnprocessableContent"];
+      500: components["responses"]["InternalServerError"];
+    };
+  };
+  updateTicketDueDate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
         /**
          * @description Identificador único del ticket que se actualizará.
          * @example tk-01842
          */
-        TicketId: string;
+        id: components["parameters"]["TicketId"];
+      };
+      cookie?: never;
     };
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
-}
-export type $defs = Record<string, never>;
-export interface operations {
-    listTickets: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Número de elementos omitidos antes de la página.
-                 * @example 0
-                 */
-                offset?: components["parameters"]["Offset"];
-                /**
-                 * @description Número máximo de tickets devueltos en la página.
-                 * @example 20
-                 */
-                limit?: components["parameters"]["Limit"];
-                /**
-                 * @description Texto libre para buscar tickets.
-                 * @example log4j
-                 */
-                q?: components["parameters"]["Query"];
-                /**
-                 * @description Estado por el que se filtran los tickets.
-                 * @example IN_PROGRESS
-                 */
-                state?: components["parameters"]["State"];
-                /**
-                 * @description Severidad por la que se filtran los tickets.
-                 * @example HIGH
-                 */
-                severity?: components["parameters"]["Severity"];
-                /**
-                 * @description Campo utilizado para ordenar los tickets.
-                 * @example LAST_MODIFIED
-                 */
-                sort?: components["parameters"]["Sort"];
-                /**
-                 * @description Dirección de ordenación de los resultados.
-                 * @example ASC
-                 */
-                direction?: components["parameters"]["Direction"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de tickets obtenida correctamente. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    /**
-                     * @example {
-                     *       "data": [
-                     *         {
-                     *           "id": "tk-01842",
-                     *           "key": "SEC-1842",
-                     *           "asset": "srv-payments-01",
-                     *           "assignedTeam": "security-platform",
-                     *           "assignee": "ana.garcia@example.com",
-                     *           "severity": "HIGH",
-                     *           "state": "IN_PROGRESS",
-                     *           "targetDate": "2026-11-15T10:00:00Z",
-                     *           "dueDate": "2026-11-16T10:00:00Z",
-                     *           "lastModified": "2026-11-05T09:30:00Z"
-                     *         }
-                     *       ],
-                     *       "pagination": {
-                     *         "offset": 0,
-                     *         "limit": 20,
-                     *         "totalElements": 134
-                     *       }
-                     *     }
-                     */
-                    "application/json": components["schemas"]["TicketPage"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            422: components["responses"]["UnprocessableContent"];
-            500: components["responses"]["InternalServerError"];
-        };
+    /** @description Nueva fecha límite del ticket. */
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "dueDate": "2026-11-15T10:00:00Z"
+         *     }
+         */
+        "application/json": components["schemas"]["UpdateTicketRequest"];
+      };
     };
-    updateTicketDueDate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description Identificador único del ticket que se actualizará.
-                 * @example tk-01842
-                 */
-                id: components["parameters"]["TicketId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Ticket actualizado correctamente. */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        /** @description Nueva fecha límite del ticket. */
-        requestBody: {
-            content: {
-                /**
-                 * @example {
-                 *       "dueDate": "2026-11-15T10:00:00Z"
-                 *     }
-                 */
-                "application/json": components["schemas"]["UpdateTicketRequest"];
-            };
+        content: {
+          /**
+           * @example {
+           *       "id": "tk-01842",
+           *       "key": "SEC-1842",
+           *       "asset": "srv-payments-01",
+           *       "assignedTeam": "security-platform",
+           *       "assignee": "ana.garcia@example.com",
+           *       "severity": "HIGH",
+           *       "state": "IN_PROGRESS",
+           *       "targetDate": "2026-11-15T10:00:00Z",
+           *       "dueDate": "2026-11-15T10:00:00Z",
+           *       "lastModified": "2026-11-05T10:15:00Z"
+           *     }
+           */
+          "application/json": components["schemas"]["Ticket"];
         };
-        responses: {
-            /** @description Ticket actualizado correctamente. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    /**
-                     * @example {
-                     *       "id": "tk-01842",
-                     *       "key": "SEC-1842",
-                     *       "asset": "srv-payments-01",
-                     *       "assignedTeam": "security-platform",
-                     *       "assignee": "ana.garcia@example.com",
-                     *       "severity": "HIGH",
-                     *       "state": "IN_PROGRESS",
-                     *       "targetDate": "2026-11-15T10:00:00Z",
-                     *       "dueDate": "2026-11-15T10:00:00Z",
-                     *       "lastModified": "2026-11-05T10:15:00Z"
-                     *     }
-                     */
-                    "application/json": components["schemas"]["Ticket"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            422: components["responses"]["UnprocessableContent"];
-            500: components["responses"]["InternalServerError"];
-        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+      409: components["responses"]["Conflict"];
+      422: components["responses"]["UnprocessableContent"];
+      500: components["responses"]["InternalServerError"];
     };
-    getCurrentUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Usuario autenticado obtenido correctamente. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    /**
-                     * @example {
-                     *       "id": "usr-00421",
-                     *       "email": "ana.garcia@example.com",
-                     *       "displayName": "Ana García",
-                     *       "permissions": [
-                     *         "tickets.read",
-                     *         "tickets.update"
-                     *       ]
-                     *     }
-                     */
-                    "application/json": components["schemas"]["CurrentUser"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalServerError"];
-        };
+  };
+  getCurrentUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
+    responses: {
+      /** @description Usuario autenticado obtenido correctamente. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /**
+           * @example {
+           *       "id": "usr-00421",
+           *       "email": "ana.garcia@example.com",
+           *       "displayName": "Ana García",
+           *       "permissions": [
+           *         "tickets.read",
+           *         "tickets.update"
+           *       ]
+           *     }
+           */
+          "application/json": components["schemas"]["CurrentUser"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      500: components["responses"]["InternalServerError"];
+    };
+  };
 }

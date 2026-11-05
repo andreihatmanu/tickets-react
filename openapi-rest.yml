@@ -17,24 +17,25 @@ paths:
   /api/v1/tickets:
     get:
       operationId: listTickets
-      tags: [Tickets]
+      tags:
+        - Tickets
       summary: Listar tickets
       description: Devuelve una página de tickets aplicando filtros y ordenación.
       parameters:
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Query'
-        - $ref: '#/components/parameters/State'
-        - $ref: '#/components/parameters/Severity'
-        - $ref: '#/components/parameters/Sort'
-        - $ref: '#/components/parameters/Direction'
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Query"
+        - $ref: "#/components/parameters/State"
+        - $ref: "#/components/parameters/Severity"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Direction"
       responses:
-        '200':
+        "200":
           description: Página de tickets obtenida correctamente.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketPage'
+                $ref: "#/components/schemas/TicketPage"
               example:
                 data:
                   - id: tk-01842
@@ -44,43 +45,46 @@ paths:
                     assignee: ana.garcia@example.com
                     severity: HIGH
                     state: IN_PROGRESS
-                    targetDate: '2026-11-15T10:00:00Z'
-                    dueDate: '2026-11-16T10:00:00Z'
-                    lastModified: '2026-11-05T09:30:00Z'
+                    targetDate: "2026-11-15T10:00:00Z"
+                    dueDate: "2026-11-16T10:00:00Z"
+                    lastModified: "2026-11-05T09:30:00Z"
                 pagination:
                   offset: 0
                   limit: 20
                   totalElements: 134
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '422':
-          $ref: '#/components/responses/UnprocessableContent'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /api/v1/tickets/{id}:
     patch:
       operationId: updateTicketDueDate
-      tags: [Tickets]
+      tags:
+        - Tickets
       summary: Actualizar la fecha límite de un ticket
-      description: Actualiza dueDate. Si el ticket está REPORTED pasa automáticamente a IN_PROGRESS. Los tickets DONE no admiten modificaciones.
+      description:
+        Actualiza dueDate. Si el ticket está REPORTED pasa automáticamente a IN_PROGRESS. Los tickets
+        DONE no admiten modificaciones.
       parameters:
-        - $ref: '#/components/parameters/TicketId'
+        - $ref: "#/components/parameters/TicketId"
       requestBody:
         required: true
         description: Nueva fecha límite del ticket.
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateTicketRequest'
+              $ref: "#/components/schemas/UpdateTicketRequest"
             example:
-              dueDate: '2026-11-15T10:00:00Z'
+              dueDate: "2026-11-15T10:00:00Z"
       responses:
-        '200':
+        "200":
           description: Ticket actualizado correctamente.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Ticket'
+                $ref: "#/components/schemas/Ticket"
               example:
                 id: tk-01842
                 key: SEC-1842
@@ -89,45 +93,48 @@ paths:
                 assignee: ana.garcia@example.com
                 severity: HIGH
                 state: IN_PROGRESS
-                targetDate: '2026-11-15T10:00:00Z'
-                dueDate: '2026-11-15T10:00:00Z'
-                lastModified: '2026-11-05T10:15:00Z'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/UnprocessableContent'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                targetDate: "2026-11-15T10:00:00Z"
+                dueDate: "2026-11-15T10:00:00Z"
+                lastModified: "2026-11-05T10:15:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /api/v1/me:
     get:
       operationId: getCurrentUser
-      tags: [Users]
+      tags:
+        - Users
       summary: Obtener el usuario autenticado
       description: Devuelve la identidad y los permisos efectivos del usuario autenticado.
       responses:
-        '200':
+        "200":
           description: Usuario autenticado obtenido correctamente.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CurrentUser'
+                $ref: "#/components/schemas/CurrentUser"
               example:
                 id: usr-00421
                 email: ana.garcia@example.com
                 displayName: Ana García
-                permissions: [tickets.read, tickets.update]
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                permissions:
+                  - tickets.read
+                  - tickets.update
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 components:
   securitySchemes:
     bearerAuth:
@@ -146,6 +153,8 @@ components:
         minimum: 0
         maximum: 2147483647
         default: 0
+        description: Número de elementos omitidos antes de la página.
+        example: 0
       example: 0
     Limit:
       name: limit
@@ -157,33 +166,57 @@ components:
         minimum: 1
         maximum: 100
         default: 20
+        description: Número máximo de tickets devueltos en la página.
+        example: 20
       example: 20
     Query:
       name: q
       in: query
       required: false
-      description: Texto libre para buscar tickets.
+      description: Texto libre para buscar tickets. Una cadena vacía equivale a no aplicar búsqueda.
       schema:
         type: string
-        minLength: 1
+        minLength: 0
         maxLength: 200
-        default: ''
+        default: ""
+        description: Texto libre para buscar tickets; la cadena vacía equivale a no aplicar búsqueda.
+        example: log4j
       example: log4j
     State:
       name: state
       in: query
       required: false
-      description: Estado por el que se filtran los tickets.
+      description: Estado por el que se filtran los tickets; ALL omite el filtro.
       schema:
-        $ref: '#/components/schemas/TicketState'
+        type: string
+        description: Estado por el que se filtran los tickets; ALL indica que no se aplica este filtro.
+        enum:
+          - ALL
+          - REPORTED
+          - IN_PROGRESS
+          - PENDING_SECURITY
+          - DONE
+        default: ALL
+        example: IN_PROGRESS
+        maxLength: 16
       example: IN_PROGRESS
     Severity:
       name: severity
       in: query
       required: false
-      description: Severidad por la que se filtran los tickets.
+      description: Severidad por la que se filtran los tickets; ALL omite el filtro.
       schema:
-        $ref: '#/components/schemas/TicketSeverity'
+        type: string
+        description: Severidad por la que se filtran los tickets; ALL indica que no se aplica este filtro.
+        enum:
+          - ALL
+          - CRITICAL
+          - HIGH
+          - MEDIUM
+          - LOW
+        default: ALL
+        example: HIGH
+        maxLength: 8
       example: HIGH
     Sort:
       name: sort
@@ -192,8 +225,7 @@ components:
       description: Campo utilizado para ordenar los tickets.
       schema:
         $ref: "#/components/schemas/TicketSort"
-        default: LAST_MODIFIED
-      example: LAST_MODIFIED
+      example: TARGET_DATE
     Direction:
       name: direction
       in: query
@@ -201,9 +233,14 @@ components:
       description: Dirección de ordenación de los resultados.
       schema:
         type: string
-        enum: [ASC, DESC]
-        default: ASC
-      example: ASC
+        description: Dirección de ordenación de los resultados.
+        enum:
+          - ASC
+          - DESC
+        default: DESC
+        example: DESC
+        maxLength: 4
+      example: DESC
     TicketId:
       name: id
       in: path
@@ -213,44 +250,66 @@ components:
         type: string
         minLength: 1
         maxLength: 64
-        pattern: '^[A-Za-z0-9-]+$'
+        pattern: ^[A-Za-z0-9-]+$
+        description: Identificador único del ticket que se actualizará.
+        example: tk-01842
       example: tk-01842
   schemas:
     TicketState:
       type: string
       description: Estado posible de un ticket.
-      enum: [REPORTED, IN_PROGRESS, PENDING_SECURITY, DONE]
+      enum:
+        - REPORTED
+        - IN_PROGRESS
+        - PENDING_SECURITY
+        - DONE
       example: IN_PROGRESS
+      maxLength: 16
     TicketSeverity:
       type: string
       description: Nivel de severidad de un ticket.
-      enum: [CRITICAL, HIGH, MEDIUM, LOW]
+      enum:
+        - CRITICAL
+        - HIGH
+        - MEDIUM
+        - LOW
       example: HIGH
+      maxLength: 8
     Ticket:
       type: object
       description: Información completa de un ticket.
-      required: [id, key, asset, assignedTeam, assignee, severity, state, targetDate, dueDate, lastModified]
+      required:
+        - id
+        - key
+        - asset
+        - assignedTeam
+        - assignee
+        - severity
+        - state
+        - targetDate
+        - dueDate
+        - lastModified
       properties:
         id:
           type: string
           minLength: 1
           maxLength: 64
-          pattern: '^[A-Za-z0-9-]+$'
+          pattern: ^[A-Za-z0-9-]+$
           description: Identificador único del ticket.
           example: tk-01842
         key:
           type: string
           minLength: 1
           maxLength: 32
-          pattern: '^[A-Z][A-Z0-9]+-[0-9]+$'
+          pattern: ^[A-Z][A-Z0-9]+-[0-9]+$
           description: Clave legible del ticket.
           example: SEC-1842
         asset:
           type: string
           minLength: 1
           maxLength: 255
-          description: Activo afectado por el ticket.
-          example: srv-payments-01
+          description: Activo afectado por el ticket; usa el literal None cuando el activo sea desconocido.
+          example: payments-api
         assignedTeam:
           type: string
           nullable: true
@@ -265,25 +324,31 @@ components:
           description: Correo de la persona asignada al ticket.
           example: ana.garcia@example.com
         severity:
-          $ref: '#/components/schemas/TicketSeverity'
+          description: Nivel de severidad del ticket.
+          example: HIGH
+          allOf:
+            - $ref: "#/components/schemas/TicketSeverity"
         state:
-          $ref: '#/components/schemas/TicketState'
+          description: Estado actual del ticket.
+          example: IN_PROGRESS
+          allOf:
+            - $ref: "#/components/schemas/TicketState"
         targetDate:
           type: string
           format: date-time
           description: Fecha objetivo original en formato RFC 3339.
-          example: '2026-11-15T10:00:00Z'
+          example: "2026-11-15T10:00:00Z"
         dueDate:
           type: string
           format: date-time
           nullable: true
           description: Fecha límite vigente en formato RFC 3339, o null si no está definida.
-          example: '2026-11-16T10:00:00Z'
+          example: "2026-11-16T10:00:00Z"
         lastModified:
           type: string
           format: date-time
           description: Fecha de última modificación en formato RFC 3339.
-          example: '2026-11-05T09:30:00Z'
+          example: "2026-11-05T09:30:00Z"
       example:
         id: tk-01842
         key: SEC-1842
@@ -292,22 +357,41 @@ components:
         assignee: ana.garcia@example.com
         severity: HIGH
         state: IN_PROGRESS
-        targetDate: '2026-11-15T10:00:00Z'
-        dueDate: '2026-11-16T10:00:00Z'
-        lastModified: '2026-11-05T09:30:00Z'
+        targetDate: "2026-11-15T10:00:00Z"
+        dueDate: "2026-11-16T10:00:00Z"
+        lastModified: "2026-11-05T09:30:00Z"
     TicketPage:
       type: object
       description: Resultado paginado de una consulta de tickets.
-      required: [data, pagination]
+      required:
+        - data
+        - pagination
       properties:
         data:
           type: array
           maxItems: 100
           description: Tickets incluidos en la página actual.
           items:
-            $ref: '#/components/schemas/Ticket'
+            $ref: "#/components/schemas/Ticket"
+          example:
+            - id: tk-01842
+              key: SEC-1842
+              asset: payments-api
+              assignedTeam: security-platform
+              assignee: ana.garcia@example.com
+              severity: HIGH
+              state: IN_PROGRESS
+              targetDate: "2026-11-15T10:00:00Z"
+              dueDate: "2026-11-16T10:00:00Z"
+              lastModified: "2026-11-05T09:30:00Z"
         pagination:
-          $ref: '#/components/schemas/Pagination'
+          description: Metadatos de paginación de la respuesta.
+          example:
+            offset: 0
+            limit: 20
+            totalElements: 134
+          allOf:
+            - $ref: "#/components/schemas/Pagination"
       example:
         data:
           - id: tk-01842
@@ -317,23 +401,30 @@ components:
             assignee: ana.garcia@example.com
             severity: HIGH
             state: IN_PROGRESS
-            targetDate: '2026-11-15T10:00:00Z'
-            dueDate: '2026-11-16T10:00:00Z'
-            lastModified: '2026-11-05T09:30:00Z'
+            targetDate: "2026-11-15T10:00:00Z"
+            dueDate: "2026-11-16T10:00:00Z"
+            lastModified: "2026-11-05T09:30:00Z"
         pagination:
           offset: 0
           limit: 20
           totalElements: 134
     TicketSort:
-        type: string
-        description: Campo por el que ordenar los tickets.
-        enum:
-          - LAST_MODIFIED
-          - SEVERITY
+      type: string
+      description: Campo por el que ordenar los tickets.
+      enum:
+        - TARGET_DATE
+        - LAST_MODIFIED
+        - SEVERITY
+      example: LAST_MODIFIED
+      default: LAST_MODIFIED
+      maxLength: 13
     Pagination:
       type: object
       description: Metadatos de paginación.
-      required: [offset, limit, totalElements]
+      required:
+        - offset
+        - limit
+        - totalElements
       properties:
         offset:
           type: integer
@@ -361,25 +452,30 @@ components:
       type: object
       description: Datos permitidos para actualizar la fecha límite de un ticket.
       additionalProperties: false
-      required: [dueDate]
+      required:
+        - dueDate
       properties:
         dueDate:
           type: string
           format: date-time
           description: Nueva fecha límite en formato RFC 3339.
-          example: '2026-11-15T10:00:00Z'
+          example: "2026-11-15T10:00:00Z"
       example:
-        dueDate: '2026-11-15T10:00:00Z'
+        dueDate: "2026-11-15T10:00:00Z"
     CurrentUser:
       type: object
       description: Identidad y permisos del usuario autenticado.
-      required: [id, email, displayName, permissions]
+      required:
+        - id
+        - email
+        - displayName
+        - permissions
       properties:
         id:
           type: string
           minLength: 1
           maxLength: 64
-          pattern: '^[A-Za-z0-9-]+$'
+          pattern: ^[A-Za-z0-9-]+$
           description: Identificador único del usuario.
           example: usr-00421
         email:
@@ -402,18 +498,26 @@ components:
             type: string
             minLength: 1
             maxLength: 100
-            pattern: '^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$'
+            pattern: ^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$
             description: Identificador de un permiso.
             example: tickets.update
+          example:
+            - tickets.read
+            - tickets.update
       example:
         id: usr-00421
         email: ana.garcia@example.com
         displayName: Ana García
-        permissions: [tickets.read, tickets.update]
+        permissions:
+          - tickets.read
+          - tickets.update
     Problem:
       type: object
       description: Problem Details para HTTP APIs conforme a RFC 9457.
-      required: [type, title, status]
+      required:
+        - type
+        - title
+        - status
       properties:
         type:
           type: string
@@ -448,7 +552,7 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-          pattern: '^[A-Z][A-Z0-9_]+$'
+          pattern: ^[A-Z][A-Z0-9_]+$
           description: Código de error estable específico de la API.
           example: INVALID_PARAMETER
       example:
@@ -464,7 +568,7 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/Problem'
+            $ref: "#/components/schemas/Problem"
           example:
             type: https://api.example.com/problems/bad-request
             title: Bad Request
@@ -477,7 +581,7 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/Problem'
+            $ref: "#/components/schemas/Problem"
           example:
             type: https://api.example.com/problems/unauthorized
             title: Unauthorized
@@ -490,7 +594,7 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/Problem'
+            $ref: "#/components/schemas/Problem"
           example:
             type: https://api.example.com/problems/forbidden
             title: Forbidden
@@ -503,7 +607,7 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/Problem'
+            $ref: "#/components/schemas/Problem"
           example:
             type: https://api.example.com/problems/not-found
             title: Not Found
@@ -516,7 +620,7 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/Problem'
+            $ref: "#/components/schemas/Problem"
           example:
             type: https://api.example.com/problems/conflict
             title: Conflict
@@ -529,7 +633,7 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/Problem'
+            $ref: "#/components/schemas/Problem"
           example:
             type: https://api.example.com/problems/validation-error
             title: Unprocessable Content
@@ -542,7 +646,7 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/Problem'
+            $ref: "#/components/schemas/Problem"
           example:
             type: https://api.example.com/problems/internal-server-error
             title: Internal Server Error

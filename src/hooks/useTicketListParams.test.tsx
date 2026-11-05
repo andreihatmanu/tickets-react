@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import type { PropsWithChildren } from "react";
 
 import { useTicketListParams } from "./useTicketListParams";
@@ -16,10 +16,13 @@ function renderTicketListParams(initialEntry = "/") {
     () => {
       const result = useTicketListParams();
       const location = useLocation();
+      const navigate = useNavigate();
 
       return {
         ...result,
-        search: location.search
+        search: location.search,
+        goBack: () => navigate(-1),
+        goForward: () => navigate(1)
       };
     },
     { wrapper: createWrapper(initialEntry) }
@@ -43,15 +46,12 @@ describe("useTicketListParams", () => {
 
   it("does not add default values to the URL", async () => {
     const { result } = renderTicketListParams();
-
-    await waitFor(() => {
-      expect(result.current.search).toBe("");
-    });
+    await waitFor(() => expect(result.current.search).toBe(""));
   });
 
   it("reads filters from the URL", () => {
     const { result } = renderTicketListParams(
-      "/?offset=20&limit=10&q=log4j&state=IN_PROGRESS&severity=HIGH"
+      "/?offset=20&limit=10&q=log4j&state=IN_PROGRESS&severity=HIGH&sort=TARGET_DATE&direction=ASC"
     );
 
     expect(result.current.params).toMatchObject({
@@ -59,16 +59,16 @@ describe("useTicketListParams", () => {
       limit: 10,
       q: "log4j",
       state: "IN_PROGRESS",
-      severity: "HIGH"
+      severity: "HIGH",
+      sort: "TARGET_DATE",
+      direction: "ASC"
     });
   });
 
   it("resets the offset when filters change", async () => {
     const { result } = renderTicketListParams("/?offset=40");
 
-    act(() => {
-      result.current.setFilters({ q: "log4j" });
-    });
+    act(() => result.current.setFilters({ q: "log4j" }));
 
     await waitFor(() => {
       expect(result.current.params.offset).toBe(0);
@@ -79,9 +79,7 @@ describe("useTicketListParams", () => {
   it("changes the page without losing the filters", async () => {
     const { result } = renderTicketListParams("/?q=log4j&state=IN_PROGRESS");
 
-    act(() => {
-      result.current.setPage(20);
-    });
+    act(() => result.current.setPage(20));
 
     await waitFor(() => {
       expect(result.current.params.offset).toBe(20);
@@ -95,9 +93,7 @@ describe("useTicketListParams", () => {
       "/?offset=40&limit=10&q=log4j&state=IN_PROGRESS&severity=HIGH"
     );
 
-    act(() => {
-      result.current.reset();
-    });
+    act(() => result.current.reset());
 
     await waitFor(() => {
       expect(result.current.params).toEqual({
@@ -111,75 +107,79 @@ describe("useTicketListParams", () => {
       });
     });
   });
+
   it("normalizes invalid URL parameters", async () => {
     const { result } = renderTicketListParams(
-      "/?offset=-10&limit=500&state=INVALID&severity=INVALID&direction=INVALID"
+      "/?offset=-10&limit=500&state=INVALID&severity=INVALID&sort=INVALID&direction=INVALID"
     );
 
     await waitFor(() => {
-      expect(result.current.params.offset).toBe(0);
-      expect(result.current.params.limit).toBe(20);
-      expect(result.current.params.state).toBe("ALL");
-      expect(result.current.params.severity).toBe("ALL");
-      expect(result.current.params.direction).toBe("DESC");
+      expect(result.current.params).toEqual({
+        offset: 0,
+        limit: 20,
+        q: "",
+        state: "ALL",
+        severity: "ALL",
+        sort: "LAST_MODIFIED",
+        direction: "DESC"
+      });
     });
+    expect(result.current.search).toBe("");
   });
+
+  it.each(["", "   ", "x".repeat(201)])(
+    "normalizes empty or oversized search text: %s",
+    async (query) => {
+      const { result } = renderTicketListParams(`/?q=${encodeURIComponent(query)}`);
+      await waitFor(() => expect(result.current.params.q).toBe(""));
+    }
+  );
 
   it("removes unknown URL parameters", async () => {
     const { result } = renderTicketListParams("/?unknown=value&q=log4j");
 
     await waitFor(() => {
-      expect(result.current.search).not.toContain("unknown");
+      expect(result.current.search).toBe("?q=log4j");
       expect(result.current.params.q).toBe("log4j");
     });
   });
 
   it.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1])("ignores invalid page offset: %s", (offset) => {
     const { result } = renderTicketListParams();
-
-    act(() => {
-      result.current.setPage(offset);
-    });
-
+    act(() => result.current.setPage(offset));
     expect(result.current.params.offset).toBe(0);
   });
+
   it("preserves filters when changing sort options", async () => {
     const { result } = renderTicketListParams("/?q=log4j&state=IN_PROGRESS");
 
-    act(() => {
-      result.current.setFilters({
-        sort: "LAST_MODIFIED",
-        direction: "ASC"
-      });
-    });
+    act(() => result.current.setFilters({ sort: "TARGET_DATE", direction: "ASC" }));
 
     await waitFor(() => {
       expect(result.current.params.q).toBe("log4j");
       expect(result.current.params.state).toBe("IN_PROGRESS");
-      expect(result.current.params.sort).toBe("LAST_MODIFIED");
+      expect(result.current.params.sort).toBe("TARGET_DATE");
       expect(result.current.params.direction).toBe("ASC");
       expect(result.current.params.offset).toBe(0);
     });
   });
+
   it("supports browser back and forward navigation", async () => {
     const { result } = renderTicketListParams();
 
-    act(() => {
-      result.current.setFilters({ q: "log4j" });
-    });
+    act(() => result.current.setFilters({ q: "log4j" }));
+    await waitFor(() => expect(result.current.params.q).toBe("log4j"));
 
+    act(() => result.current.setFilters({ state: "IN_PROGRESS" }));
+    await waitFor(() => expect(result.current.params.state).toBe("IN_PROGRESS"));
+
+    act(() => result.current.goBack());
     await waitFor(() => {
       expect(result.current.params.q).toBe("log4j");
+      expect(result.current.params.state).toBe("ALL");
     });
 
-    act(() => {
-      result.current.setFilters({ state: "IN_PROGRESS" });
-    });
-
-    await waitFor(() => {
-      expect(result.current.params.state).toBe("IN_PROGRESS");
-    });
-
-    // Para probar atrás/adelante de forma real
+    act(() => result.current.goForward());
+    await waitFor(() => expect(result.current.params.state).toBe("IN_PROGRESS"));
   });
 });

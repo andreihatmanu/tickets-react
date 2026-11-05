@@ -360,5 +360,5 @@ export const mockTickets: Ticket[] = [
     targetDate: "2026-11-06T12:00:00Z",
     dueDate: "2027-11-07T12:00:00Z",
     lastModified: "2026-11-01T14:50:00Z"
-  },
+  }
 ];
