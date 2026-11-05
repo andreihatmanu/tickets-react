@@ -11,30 +11,28 @@ export type TicketFilters = {
     direction?: "ASC" | "DESC";
 };
 
-export async function getTickets(
-    filters: TicketFilters,
-    signal?: AbortSignal
-) {
+export async function getTickets(filters: TicketFilters, signal?: AbortSignal) {
     const params = new URLSearchParams();
 
     params.set("offset", String(filters.offset));
     params.set("limit", String(filters.limit));
 
-    if (filters.q) params.set("q", filters.q);
+    if (filters.q?.trim()) {
+        params.set("q", filters.q.trim());
+    }
+
     if (filters.state && filters.state !== "ALL") {
         params.set("state", filters.state);
     }
+
     if (filters.severity && filters.severity !== "ALL") {
         params.set("severity", filters.severity);
     }
 
     params.set("sort", filters.sort ?? "LAST_MODIFIED");
-    params.set("direction", filters.direction ?? "ASC");
+    params.set("direction", filters.direction ?? "DESC");
 
-    const response = await fetch(
-        `/api/v1/tickets?${params.toString()}`,
-        { signal }
-    );
+    const response = await fetch(`/api/v1/tickets?${params.toString()}`, { signal });
 
     if (!response.ok) {
         throw new Error(`Error obteniendo tickets: ${response.status}`);

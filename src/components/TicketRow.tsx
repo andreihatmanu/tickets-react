@@ -20,14 +20,6 @@ export function TicketRow({ ticket, onChange }: TicketRowProps) {
           : ticket.severity}
       </td>
       <td>{ticket.targetDate ? formatDate(ticket.targetDate) : "—"}</td>
-      {onChange && (
-        <td>
-          <button type="button" onClick={onChange}>
-            Actualizar
-          </button>
-        </td>
-      )}
-      {!onChange && <td>—</td>}
     </tr>
   );
 }

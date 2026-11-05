@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { TicketState } from "./ticket.schema";
+import { Ticket } from "./ticket.schema";
 
 export const TicketResponseSchema = z.object({
-  data: z.array(TicketState),
+  data: z.array(Ticket),
   pagination: z.object({
     offset: z.number().int().nonnegative(),
     limit: z.number().int().min(1).max(100),

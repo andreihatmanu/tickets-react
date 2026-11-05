@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { z } from "zod";
 
 import { Pagination } from "../components/Pagination";
@@ -13,6 +13,7 @@ import { mockTickets } from "../features/tickets/mocks/tickets.mock";
 import { useDebounce } from "../hooks/useDebounce";
 import { useTicketListParams } from "../hooks/useTicketListParams";
 import { notify as n } from "../hooks/notify";
+import { getTickets } from "../features/tickets/services/ticket.service";
 
 export const stateLabels: Record<z.infer<typeof TicketState>, string> = {
   REPORTED: "Reportado",
@@ -32,12 +33,11 @@ export function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [usingMocks, setUsingMocks] = useState(false);
+  const hasNotifiedMocks = useRef(false);
 
   // URL parameters
   const { params, setPage, setFilters } = useTicketListParams();
-  const { offset, limit, state, q } = params;
+  const { offset, limit, state, severity, sort, direction, q } = params;
 
   // Search input
   const [searchInput, setSearchInput] = useState(q);
@@ -61,37 +61,23 @@ export function TicketsPage() {
 
     const loadTickets = async () => {
       setLoading(true);
-      setError(null);
 
       try {
-        const queryParams = new URLSearchParams({
-          offset: String(offset),
-          limit: String(limit)
-        });
+        const response = await getTickets(
+          {
+            offset,
+            limit,
+            q,
+            state,
+            severity,
+            sort,
+            direction
+          },
+          controller.signal
+        );
 
-        if (state !== "ALL") {
-          queryParams.set("state", state);
-        }
-
-        if (q.trim()) {
-          queryParams.set("q", q.trim());
-        }
-
-        const response = await fetch(`/api/v1/tickets?${queryParams.toString()}`, {
-          signal: controller.signal
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error HTTP: ${response.status}`);
-        }
-
-        const body = await response.json();
-
-        const parsedTickets = z.array(TicketSchema).parse(body.data);
-
-        setTickets(parsedTickets);
-        setTotal(body.pagination.totalElements);
-        setUsingMocks(false);
+        setTickets(response.data);
+        setTotal(response.pagination.totalElements);
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
           return;
@@ -99,9 +85,11 @@ export function TicketsPage() {
 
         setTickets(mockTickets);
         setTotal(mockTickets.length);
-        setUsingMocks(true);
 
-        n.info("Mostrando datos de demostración debido a un error al obtener los tickets.");
+        if (!hasNotifiedMocks.current) {
+          n.warning("Mostrando datos de demostración debido a un error al obtener los tickets.");
+          hasNotifiedMocks.current = true;
+        }
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -112,10 +100,10 @@ export function TicketsPage() {
     void loadTickets();
 
     return () => controller.abort();
-  }, [offset, limit, state, q]);
+  }, [offset, limit, state, severity, sort, direction, q]);
 
+  // Expired tickets
   const now = Date.now();
-
   const expired = tickets.filter((ticket) => new Date(ticket.targetDate).getTime() < now);
 
   return (
@@ -130,7 +118,11 @@ export function TicketsPage() {
       <select
         id="state"
         value={state}
-        onChange={(event) => setFilters({ state: event.target.value as typeof state })}
+        onChange={(event) =>
+          setFilters({
+            state: event.target.value as typeof state
+          })
+        }
       >
         <option value="ALL">Todos</option>
 
@@ -141,11 +133,7 @@ export function TicketsPage() {
         ))}
       </select>
 
-      {usingMocks && <p role="status">Mostrando datos de demostración.</p>}
-
       {loading && <Spinner />}
-
-      {error && <p role="alert">{error}</p>}
 
       {!loading && (
         <>
