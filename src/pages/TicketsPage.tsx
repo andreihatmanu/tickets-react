@@ -1,59 +1,121 @@
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
-import { z } from "zod";
+import { useSearchParams } from "react-router-dom";
+
 import { Pagination } from "../components/Pagination";
 import { Spinner } from "../components/Spinner";
 import { TicketRow } from "../components/TicketRow";
 
-export const TicketSchema = z.object({
-  id: z.number(),
-  title: z.string(),
-  state: z.enum(["REPORTED", "IN_PROGRESS", "DONE"]),
-  targetDate: z.string().datetime().or(z.string().date())
-});
+import type { Ticket } from "../features/tickets/schemas/ticket.schema";
 
-export type Ticket = z.infer<typeof TicketSchema>;
+import { useDebounce } from "../hooks/useDebounce";
+import { notify as n } from "../hooks/notify";
 
 export function TicketsPage() {
-  const { teamId } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
-  const offset = parseInt(searchParams.get("offset")!);
+  const [error, setError] = useState<string | null>(null);
+
+  // Search input state
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryFromUrl = searchParams.get("q") ?? "";
+  const [searchInput, setSearchInput] = useState(queryFromUrl);
+  const debouncedSearch = useDebounce(searchInput);
+
+  const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
   const limit = 20;
   const state = searchParams.get("state") || "ALL";
+
   useEffect(() => {
-    setLoading(true);
-    fetch(
-      `/api/v1/teams/${teamId!}/tickets? offset=${offset}&limit=${limit}&state=${state}&q=${search}`
-    )
-      .then((r) => r.json())
-      .then((body) => {
+    const controller = new AbortController();
+
+    const loadTickets = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams({
+          offset: String(offset),
+          limit: String(limit)
+        });
+
+        if (state !== "ALL") {
+          params.set("state", state);
+        }
+
+        if (debouncedSearch.trim()) {
+          params.set("q", debouncedSearch.trim());
+        }
+
+        const response = await fetch(`/api/v1/tickets?${params.toString()}`, {
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error al cargar tickets (${response.status})`);
+        }
+
+        const body = await response.json();
+
         setTickets(body.data);
         setTotal(body.pagination.totalElements);
-        setLoading(false);
-      });
-  }, [offset, state, search]);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+
+        setTickets([]);
+        setTotal(0);
+        n.error("No se han podido cargar los tickets.");
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadTickets();
+
+    return () => controller.abort();
+  }, [offset, limit, state, debouncedSearch]);
+
   const changeState = (value: string) => {
-    searchParams.set("state", value);
-    setSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams);
+
+    if (value === "ALL") {
+      params.delete("state");
+    } else {
+      params.set("state", value);
+    }
+
+    params.set("offset", "0");
+    setSearchParams(params);
   };
-  const expired = tickets.filter((t) => new Date(t.targetDate) < new Date());
+
+  const expired = tickets.filter((ticket) => new Date(ticket.targetDate) < new Date());
+
   return (
     <div>
-      <input value={search} onChange={(e) => setSearch(e.target.value)} />
+      <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+
       <select value={state} onChange={(e) => changeState(e.target.value)}>
-        <option value="ALL">Todos</option> <option value="REPORTED">Reportado</option>
-        <option value="IN_PROGRESS">En curso</option> <option value="DONE">Hecho</option>
+        <option value="ALL">Todos</option>
+        <option value="REPORTED">Reportado</option>
+        <option value="IN_PROGRESS">En curso</option>
+        <option value="PENDING_SECURITY">Pendiente de seguridad</option>
+        <option value="DONE">Hecho</option>
       </select>
-      {loading && <Spinner />} <p>{expired.length} tickets caducados</p>
+
+      {loading && <Spinner label="Cargando tickets..." />}
+
+      {error && <p role="alert">{error}</p>}
+
+      {!loading && !error && <p>{expired.length} tickets caducados</p>}
+
       <table>
-        Classora Technologies · Prueba técnica · react-senior 2 / 5
         <tbody>
-          {tickets.map((t, i) => (
-            <TicketRow key={i} ticket={t} onChange={() => setTickets([...tickets])} />
+          {tickets.map((ticket) => (
+            <TicketRow key={ticket.id} ticket={ticket} onChange={() => setTickets([...tickets])} />
           ))}
         </tbody>
       </table>
@@ -62,8 +124,9 @@ export function TicketsPage() {
         offset={offset}
         limit={limit}
         onChange={(o: number) => {
-          searchParams.set("offset", String(o));
-          setSearchParams(searchParams);
+          const params = new URLSearchParams(searchParams);
+          params.set("offset", String(o));
+          setSearchParams(params);
         }}
       />
     </div>
