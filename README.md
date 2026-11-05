@@ -1,6 +1,6 @@
 # Tickets React Starter
 
-Proyecto base con React 18, TypeScript en modo estricto, Vite y React Router 6.
+Proyecto base con React 18, TypeScript, Vite y React Router 6.
 
 ## Arranque
 

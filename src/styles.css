@@ -1,0 +1,5 @@
+body { font-family: system-ui, sans-serif; margin: 2rem; }
+input, select, button { font: inherit; margin: 0.25rem; padding: 0.4rem; }
+table { border-collapse: collapse; margin-top: 1rem; width: 100%; }
+td { border-bottom: 1px solid #ddd; padding: 0.6rem; text-align: left; }
+nav { margin-top: 1rem; }
