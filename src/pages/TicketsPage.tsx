@@ -17,7 +17,7 @@ export function TicketsPage() {
   useEffect(() => {
     setLoading(true);
     fetch(
-      `/api/v1/teams/${teamId!}/tickets? offset=${offset}&limit=${limit}&state=${state}&q=${search}`,
+      `/api/v1/teams/${teamId!}/tickets? offset=${offset}&limit=${limit}&state=${state}&q=${search}`
     )
       .then((r) => r.json())
       .then((body) => {
@@ -37,10 +37,8 @@ export function TicketsPage() {
       <input value={search} onChange={(e) => setSearch(e.target.value)} />{" "}
       <select value={state} onChange={(e) => changeState(e.target.value)}>
         {" "}
-        <option value="ALL">Todos</option>{" "}
-        <option value="REPORTED">Reportado</option>{" "}
-        <option value="IN_PROGRESS">En curso</option>{" "}
-        <option value="DONE">Hecho</option>{" "}
+        <option value="ALL">Todos</option> <option value="REPORTED">Reportado</option>{" "}
+        <option value="IN_PROGRESS">En curso</option> <option value="DONE">Hecho</option>{" "}
       </select>{" "}
       {loading && <Spinner />} <p>{expired.length} tickets caducados</p>{" "}
       <table>
@@ -49,11 +47,7 @@ export function TicketsPage() {
         <tbody>
           {" "}
           {tickets.map((t, i) => (
-            <TicketRow
-              key={i}
-              ticket={t}
-              onChange={() => setTickets([...tickets])}
-            />
+            <TicketRow key={i} ticket={t} onChange={() => setTickets([...tickets])} />
           ))}{" "}
         </tbody>{" "}
       </table>{" "}

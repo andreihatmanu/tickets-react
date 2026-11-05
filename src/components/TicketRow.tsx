@@ -9,7 +9,11 @@ export function TicketRow({ ticket, onChange }: TicketRowProps) {
       <td>{ticket.title ?? ticket.id ?? "Ticket"}</td>
       <td>{ticket.state ?? "—"}</td>
       <td>{ticket.targetDate ?? "—"}</td>
-      <td><button type="button" onClick={onChange}>Actualizar</button></td>
+      <td>
+        <button type="button" onClick={onChange}>
+          Actualizar
+        </button>
+      </td>
     </tr>
   );
 }

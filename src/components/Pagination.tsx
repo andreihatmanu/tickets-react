@@ -13,7 +13,10 @@ export function Pagination({ total, offset, limit, onChange }: PaginationProps) 
       <button type="button" disabled={offset <= 0} onClick={() => onChange(previous)}>
         Anterior
       </button>
-      <span> {total === 0 ? 0 : offset + 1}–{Math.min(offset + limit, total)} de {total} </span>
+      <span>
+        {" "}
+        {total === 0 ? 0 : offset + 1}–{Math.min(offset + limit, total)} de {total}{" "}
+      </span>
       <button type="button" disabled={next >= total} onClick={() => onChange(next)}>
         Siguiente
       </button>
