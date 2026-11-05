@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { z } from "zod";
 import { Pagination } from "../components/Pagination";
 import { Spinner } from "../components/Spinner";
 import { TicketRow } from "../components/TicketRow";
+
+export const TicketSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  state: z.enum(["REPORTED", "IN_PROGRESS", "DONE"]),
+  targetDate: z.string().datetime().or(z.string().date())
+});
+
+export type Ticket = z.infer<typeof TicketSchema>;
 
 export function TicketsPage() {
   const { teamId } = useParams();
@@ -33,24 +43,20 @@ export function TicketsPage() {
   const expired = tickets.filter((t) => new Date(t.targetDate) < new Date());
   return (
     <div>
-      {" "}
-      <input value={search} onChange={(e) => setSearch(e.target.value)} />{" "}
+      <input value={search} onChange={(e) => setSearch(e.target.value)} />
       <select value={state} onChange={(e) => changeState(e.target.value)}>
-        {" "}
-        <option value="ALL">Todos</option> <option value="REPORTED">Reportado</option>{" "}
-        <option value="IN_PROGRESS">En curso</option> <option value="DONE">Hecho</option>{" "}
-      </select>{" "}
-      {loading && <Spinner />} <p>{expired.length} tickets caducados</p>{" "}
+        <option value="ALL">Todos</option> <option value="REPORTED">Reportado</option>
+        <option value="IN_PROGRESS">En curso</option> <option value="DONE">Hecho</option>
+      </select>
+      {loading && <Spinner />} <p>{expired.length} tickets caducados</p>
       <table>
-        {" "}
         Classora Technologies · Prueba técnica · react-senior 2 / 5
         <tbody>
-          {" "}
           {tickets.map((t, i) => (
             <TicketRow key={i} ticket={t} onChange={() => setTickets([...tickets])} />
-          ))}{" "}
-        </tbody>{" "}
-      </table>{" "}
+          ))}
+        </tbody>
+      </table>
       <Pagination
         total={total}
         offset={offset}
@@ -59,7 +65,7 @@ export function TicketsPage() {
           searchParams.set("offset", String(o));
           setSearchParams(searchParams);
         }}
-      />{" "}
+      />
     </div>
   );
 }
