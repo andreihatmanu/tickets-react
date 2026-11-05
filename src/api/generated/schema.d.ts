@@ -173,6 +173,11 @@ export interface components {
             pagination: components["schemas"]["Pagination"];
         };
         /**
+         * @description Campo por el que ordenar los tickets.
+         * @enum {string}
+         */
+        TicketSort: "LAST_MODIFIED" | "SEVERITY";
+        /**
          * @description Metadatos de paginación.
          * @example {
          *       "offset": 0,
@@ -452,9 +457,9 @@ export interface components {
         Severity: components["schemas"]["TicketSeverity"];
         /**
          * @description Campo utilizado para ordenar los tickets.
-         * @example TARGET_DATE
+         * @example LAST_MODIFIED
          */
-        Sort: "TARGET_DATE" | "LAST_MODIFIED" | "SEVERITY";
+        Sort: components["schemas"]["TicketSort"];
         /**
          * @description Dirección de ordenación de los resultados.
          * @example ASC
@@ -502,7 +507,7 @@ export interface operations {
                 severity?: components["parameters"]["Severity"];
                 /**
                  * @description Campo utilizado para ordenar los tickets.
-                 * @example TARGET_DATE
+                 * @example LAST_MODIFIED
                  */
                 sort?: components["parameters"]["Sort"];
                 /**

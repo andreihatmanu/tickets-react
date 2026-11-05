@@ -3,16 +3,18 @@ import { useSearchParams } from "react-router-dom";
 
 import {
   SeveritySchema as TicketSeverity,
-  TicketState,
+  TicketState
 } from "../features/tickets/schemas/ticket.schema";
+import type { components } from "../api/generated/schema";
 
-const SORT_OPTIONS = ["TARGET_DATE", "LAST_MODIFIED", "SEVERITY"] as const;
+const SORT_OPTIONS = ["LAST_MODIFIED", "SEVERITY"] as const;
 const DIRECTION_OPTIONS = ["ASC", "DESC"] as const;
 
-export type TicketSort = (typeof SORT_OPTIONS)[number];
+// Tipos derivados de OpenAPI
+export type TicketSort = components["schemas"]["TicketSort"];
 export type TicketDirection = (typeof DIRECTION_OPTIONS)[number];
-export type TicketStateFilter = "ALL" | (typeof TicketState.options)[number];
-export type TicketSeverityFilter = "ALL" | (typeof TicketSeverity.options)[number];
+export type TicketStateFilter = "ALL" | components["schemas"]["TicketState"];
+export type TicketSeverityFilter = "ALL" | components["schemas"]["TicketSeverity"];
 
 export type TicketListParams = {
   offset: number;
@@ -24,9 +26,7 @@ export type TicketListParams = {
   direction: TicketDirection;
 };
 
-type TicketListFilters = Partial<
-  Omit<TicketListParams, "offset" | "limit">
->;
+type TicketListFilters = Partial<Omit<TicketListParams, "offset" | "limit">>;
 
 const DEFAULTS: TicketListParams = {
   offset: 0,
@@ -60,14 +60,8 @@ function parseInteger(
   return parsed;
 }
 
-function parseEnum<T extends string>(
-  value: string | null,
-  allowed: readonly T[],
-  fallback: T
-): T {
-  return value !== null && allowed.includes(value as T)
-    ? (value as T)
-    : fallback;
+function parseEnum<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
+  return value !== null && allowed.includes(value as T) ? (value as T) : fallback;
 }
 
 function parseQuery(value: string | null): string {
@@ -111,27 +105,22 @@ function serializeParams(params: TicketListParams): URLSearchParams {
   return search;
 }
 
-function searchParamsAreEqual(
-  current: URLSearchParams,
-  normalized: URLSearchParams
-): boolean {
+// Comparación de parámetros
+function searchParamsAreEqual(current: URLSearchParams, normalized: URLSearchParams): boolean {
   return current.toString() === normalized.toString();
 }
 
 export function useTicketListParams(): {
-  params: TicketListParams; // valores ya validados y con defaults 
-  setFilters: (patch: Partial<Omit<TicketListParams, "offset" | "limit">>) => void;
+  params: TicketListParams;
+  setFilters: (patch: TicketListFilters) => void;
   setPage: (offset: number) => void;
   reset: () => void;
 } {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const params = useMemo(
-    () => normalizeParams(searchParams),
-    [searchParams]
-  );
+  const params = useMemo(() => normalizeParams(searchParams), [searchParams]);
 
-  // Replace malformed/non-canonical URLs so invalid values never persist in the address bar.
+  // Normalizar URLs inválidas o no canónicas
   useEffect(() => {
     const normalized = serializeParams(params);
 
@@ -160,7 +149,12 @@ export function useTicketListParams(): {
           ? offset
           : DEFAULTS.offset;
 
-      setSearchParams(serializeParams({ ...params, offset: validOffset }));
+      setSearchParams(
+        serializeParams({
+          ...params,
+          offset: validOffset
+        })
+      );
     },
     [params, setSearchParams]
   );
@@ -169,5 +163,10 @@ export function useTicketListParams(): {
     setSearchParams(new URLSearchParams());
   }, [setSearchParams]);
 
-  return { params, setFilters, setPage, reset };
+  return {
+    params,
+    setFilters,
+    setPage,
+    reset
+  };
 }

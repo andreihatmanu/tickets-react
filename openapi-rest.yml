@@ -191,10 +191,9 @@ components:
       required: false
       description: Campo utilizado para ordenar los tickets.
       schema:
-        type: string
-        enum: [TARGET_DATE, LAST_MODIFIED, SEVERITY]
-        default: TARGET_DATE
-      example: TARGET_DATE
+        $ref: "#/components/schemas/TicketSort"
+        default: LAST_MODIFIED
+      example: LAST_MODIFIED
     Direction:
       name: direction
       in: query
@@ -325,6 +324,12 @@ components:
           offset: 0
           limit: 20
           totalElements: 134
+    TicketSort:
+        type: string
+        description: Campo por el que ordenar los tickets.
+        enum:
+          - LAST_MODIFIED
+          - SEVERITY
     Pagination:
       type: object
       description: Metadatos de paginación.
