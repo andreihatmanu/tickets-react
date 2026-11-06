@@ -32,16 +32,18 @@ class SeverityFilter(str, Enum):
     LOW = "LOW"
 
 class TicketSort(str, Enum):
+    KEY = "KEY"
+    SEVERITY = "SEVERITY"
+    STATE = "STATE"
     TARGET_DATE = "TARGET_DATE"
     LAST_MODIFIED = "LAST_MODIFIED"
-    SEVERITY = "SEVERITY"
 
 class Direction(str, Enum):
     ASC = "ASC"
     DESC = "DESC"
 
 class Ticket(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
     id: UUID = Field(description="Identificador UUID del ticket.", examples=["b7c1e0de-6f0a-4f43-9a55-0a2f6c1d8e11"], json_schema_extra={"maxLength": 36})
     key: str = Field(pattern=r"^SEC-[0-9]{4,6}$", max_length=16, description="Clave legible del ticket.", examples=["SEC-1024"])
     title: str = Field(min_length=1, max_length=200, description="Resumen del hallazgo de seguridad.", examples=["Log4j vulnerable version in payments-api"])
@@ -53,7 +55,7 @@ class Ticket(BaseModel):
     state: TicketState = Field(description="Estado del flujo de trabajo.", examples=["REPORTED"])
     restricted: bool = Field(description="Indica si el ticket solo es visible para equipos autorizados.", examples=[False])
     targetDate: date = Field(description="Fecha objetivo inmutable calculada al crear el ticket.", examples=["2026-11-30"], json_schema_extra={"maxLength": 10})
-    dueDate: datetime | None = Field(description="Fecha compromiso del equipo o null.", examples=["2026-11-15T10:00:00Z", None], json_schema_extra={"maxLength": 35})
+    dueDate: date | None = Field(description="Fecha compromiso del equipo o null.", examples=["2026-11-15", None], json_schema_extra={"maxLength": 10})
     createdAt: datetime = Field(description="Instante de creación del ticket.", examples=["2026-10-01T09:12:00Z"], json_schema_extra={"maxLength": 35})
     lastModified: datetime = Field(description="Instante de última modificación.", examples=["2026-10-20T15:40:00Z"], json_schema_extra={"maxLength": 35})
 
@@ -70,14 +72,8 @@ TicketPage.model_rebuild()
 
 class DueDateUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    dueDate: datetime | None = Field(description="Fecha compromiso ISO 8601 o null para eliminarla.", examples=["2026-11-15T10:00:00Z", None], json_schema_extra={"maxLength": 35})
+    dueDate: date = Field(description="Fecha compromiso en formato YYYY-MM-DD.", examples=["2026-11-15"], json_schema_extra={"maxLength": 10})
 
-    @field_validator("dueDate")
-    @classmethod
-    def require_timezone(cls, value):
-        if value is not None and (value.tzinfo is None or value.utcoffset() is None):
-            raise ValueError("dueDate must include a timezone (RFC 3339)")
-        return value
 
 class CurrentUser(BaseModel):
     team: str = Field(min_length=1, max_length=100, description="Equipo al que pertenece el usuario.", examples=["Payments"])

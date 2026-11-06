@@ -11,7 +11,7 @@
     "api:check": "python ./backend/check_contract.py",
     "test:react": "vitest run",
     "test:python": "python -m pytest backend/tests -v",
-    "test:all": "npm run test:react && npm run test:python",
+    "test:all": "npm run test:react && npm run test:python && npm run api:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest",

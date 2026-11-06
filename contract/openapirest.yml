@@ -39,6 +39,8 @@ paths:
       - $ref: '#/components/parameters/Direction'
       - $ref: '#/components/parameters/UserTeam'
       - $ref: '#/components/parameters/UserPermissions'
+      - $ref: '#/components/parameters/AssignedTeam'
+      - $ref: '#/components/parameters/ExpiredOnly'
       responses:
         '200':
           description: Página de tickets visible para el usuario.
@@ -251,6 +253,27 @@ components:
         default: tickets.read
       example: tickets.read,tickets.update
       summary: UserPermissions
+    AssignedTeam:
+      name: assignedTeam
+      in: query
+      required: false
+      description: Equipo al que está asignado el ticket.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+      example: Payments
+      summary: AssignedTeam
+    ExpiredOnly:
+      name: expiredOnly
+      in: query
+      required: false
+      description: Si es true, devuelve únicamente tickets caducados.
+      schema:
+        type: boolean
+        default: false
+      example: true
+      summary: ExpiredOnly
   schemas:
     TicketState:
       type: string

@@ -35,7 +35,7 @@ def build_seed() -> list[Ticket]:
             state=state,
             restricted=(i % 5 == 0),
             targetDate=target,
-            dueDate=(now + timedelta(days=(i % 12 + 1))) if i % 3 == 0 else None,
+            dueDate=(today + timedelta(days=(i % 12 + 1))) if i % 3 == 0 else None,
             createdAt=now - timedelta(days=i + 3),
             lastModified=now - timedelta(hours=i * 5),
         ))

@@ -63,4 +63,4 @@ if errors:
     print("\n".join(f"- {error}" for error in errors))
     raise SystemExit(1)
 
-print("CONTRACT CHECK PASSED: rutas, operaciones, parámetros, respuestas y Ticket coinciden.")
+print("✅ CONTRACT CHECK PASSED: rutas, operaciones, parámetros, respuestas y Ticket coinciden.")
