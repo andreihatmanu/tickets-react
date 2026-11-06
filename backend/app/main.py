@@ -90,6 +90,30 @@ def list_tickets(
     total = len(rows)
     return TicketPage(data=rows[offset:offset + limit], pagination=Pagination(offset=offset, limit=limit, totalElements=total))
 
+@app.patch("/api/v1/tickets/{ticketId}", response_model=Ticket, operation_id="updateTicketDueDate", tags=["Tickets"], summary="Actualizar fecha compromiso", responses={403: {"model": Problem, "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}}, 404: {"model": Problem, "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}}, 409: {"model": Problem, "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}}, 422: {"model": Problem, "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}}})
+def update_ticket_due_date(
+    ticketId: Annotated[UUID, Path(description="UUID del ticket que se actualizará.")],
+    payload: DueDateUpdate,
+    user: Annotated[CurrentUser, Depends(current_user)],
+):
+    ticket = next((t for t in TICKETS if t.id == ticketId), None)
+    if ticket is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if not visible(ticket, user):
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if "tickets.update" not in user.permissions:
+        raise HTTPException(status_code=403, detail="Missing tickets.update permission")
+    if ticket.state == "DONE":
+        raise HTTPException(status_code=409, detail="DONE tickets cannot be updated")
+    ticket.dueDate = payload.dueDate
+    if ticket.state == "REPORTED":
+        ticket.state = TicketState.IN_PROGRESS
+    ticket.lastModified = datetime.now(timezone.utc)
+    return ticket
+
+@app.get("/api/v1/me", response_model=CurrentUser, operation_id="getCurrentUser", tags=["Users"], summary="Obtener perfil actual", responses={422: {"model": Problem, "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}}})
+def get_current_user(user: Annotated[CurrentUser, Depends(current_user)]):
+    return user
 
 # Recent FastAPI releases emit 3.1 by default; publish the agreed 3.0.3 document.
 _original_openapi = app.openapi
