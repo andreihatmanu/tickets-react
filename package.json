@@ -1,5 +1,5 @@
 {
-  "name": "tickets-react",
+  "name": "mini-tickets",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "api:types": "openapi-typescript ./openapi-rest.yml -o ./src/api/generated/schema.d.ts",
-    "api:check": "npm run api:types && git diff --exit-code -- src/api/generated/schema.d.ts",
+    "api:types": "openapi-typescript ./contract/openapirest.yml -o ./src/api/generated/schema.d.ts",
+    "api:check": "python ./backend/check_contract.py",
     "test:run": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest"
+    "test": "vitest",
+    "backend": "python -m uvicorn app.main:app --app-dir backend --reload --host 127.0.0.1 --port 3001",
+    "backend:test": "python -m pytest -q backend/tests"
   },
   "dependencies": {
     "react": "^18.3.1",

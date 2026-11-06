@@ -1,0 +1,667 @@
+openapi: 3.0.3
+info:
+  title: Mini Tickets API
+  version: 1.0.0
+  description: 'API de gestión de tickets de seguridad. La identidad de demostración se selecciona mediante X-User-Team
+    y X-User-Permissions. Estas cabeceras simulan el usuario y sus permisos para la prueba; no sustituyen el esquema
+    bearer definido globalmente.
+
+    '
+servers:
+- url: https://localhost:3001
+  description: Servidor local HTTPS documentado
+security:
+- bearerAuth: []
+tags:
+- name: Tickets
+  description: Consulta y actualización de tickets de seguridad.
+- name: Users
+  description: Información del perfil actual.
+paths:
+  /api/v1/tickets:
+    get:
+      operationId: listTickets
+      tags:
+      - Tickets
+      summary: Listar tickets visibles
+      description: 'Devuelve una página filtrada y ordenada. Solo se muestran tickets no restringidos, del equipo
+        creador o asignado, o tickets restringidos si el usuario tiene tickets.read.all. Requiere tickets.read o
+        tickets.read.all.
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Query'
+      - $ref: '#/components/parameters/State'
+      - $ref: '#/components/parameters/Severity'
+      - $ref: '#/components/parameters/Sort'
+      - $ref: '#/components/parameters/Direction'
+      - $ref: '#/components/parameters/UserTeam'
+      - $ref: '#/components/parameters/UserPermissions'
+      responses:
+        '200':
+          description: Página de tickets visible para el usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPage'
+              example:
+                data:
+                - id: b7c1e0de-6f0a-4f43-9a55-0a2f6c1d8e11
+                  key: SEC-1024
+                  title: Log4j vulnerable version in payments-api
+                  asset: payments-api
+                  creatorTeam: Security Champions
+                  assignedTeam: Payments
+                  assignee: jdoe@example.com
+                  severity: HIGH
+                  state: REPORTED
+                  restricted: false
+                  targetDate: '2026-11-30'
+                  dueDate: null
+                  createdAt: '2026-10-01T09:12:00Z'
+                  lastModified: '2026-10-20T15:40:00Z'
+                pagination:
+                  offset: 0
+                  limit: 20
+                  totalElements: 134
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/tickets/{ticketId}:
+    patch:
+      operationId: updateTicketDueDate
+      tags:
+      - Tickets
+      summary: Actualizar fecha compromiso
+      description: 'Requiere tickets.update y visibilidad sobre el ticket. Si el estado es REPORTED pasa automáticamente
+        a IN_PROGRESS. Los tickets DONE no pueden modificarse.
+
+        '
+      parameters:
+      - name: ticketId
+        in: path
+        required: true
+        description: Identificador UUID del ticket que se actualizará.
+        schema:
+          type: string
+          format: uuid
+          maxLength: 36
+        example: b7c1e0de-6f0a-4f43-9a55-0a2f6c1d8e11
+        summary: Identificador del ticket
+      - $ref: '#/components/parameters/UserTeam'
+      - $ref: '#/components/parameters/UserPermissions'
+      requestBody:
+        required: true
+        description: Nueva fecha compromiso del equipo; null elimina el compromiso.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DueDateUpdate'
+            example:
+              dueDate: '2026-11-15T10:00:00Z'
+      responses:
+        '200':
+          description: Ticket actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/me:
+    get:
+      operationId: getCurrentUser
+      tags:
+      - Users
+      summary: Obtener perfil actual
+      description: Devuelve el equipo y los permisos simulados a partir de las cabeceras.
+      parameters:
+      - $ref: '#/components/parameters/UserTeam'
+      - $ref: '#/components/parameters/UserPermissions'
+      responses:
+        '200':
+          description: Perfil y permisos efectivos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+              example:
+                team: Payments
+                permissions:
+                - tickets.read
+                - tickets.update
+        '422':
+          $ref: '#/components/responses/ValidationError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Esquema de seguridad documentado; en la demo la identidad se simula con cabeceras.
+  parameters:
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Número de elementos que se omiten antes de devolver la página.
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 2147483647
+        default: 0
+      example: 0
+      summary: Offset
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Número máximo de tickets por página.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+      summary: Limit
+    Query:
+      name: q
+      in: query
+      required: false
+      description: Texto buscado en clave, título, activo, equipos y responsable.
+      schema:
+        type: string
+        maxLength: 200
+        default: ''
+      example: log4j
+      summary: Query
+    State:
+      name: state
+      in: query
+      required: false
+      description: Estado por el que filtrar; ALL desactiva el filtro.
+      schema:
+        allOf:
+        - $ref: '#/components/schemas/TicketStateFilter'
+        default: ALL
+      example: IN_PROGRESS
+      summary: State
+    Severity:
+      name: severity
+      in: query
+      required: false
+      description: Severidad por la que filtrar; ALL desactiva el filtro.
+      schema:
+        allOf:
+        - $ref: '#/components/schemas/SeverityFilter'
+        default: ALL
+      example: HIGH
+      summary: Severity
+    Sort:
+      name: sort
+      in: query
+      required: false
+      description: Campo utilizado para ordenar los tickets.
+      schema:
+        allOf:
+        - $ref: '#/components/schemas/TicketSort'
+        default: LAST_MODIFIED
+      example: TARGET_DATE
+      summary: Sort
+    Direction:
+      name: direction
+      in: query
+      required: false
+      description: Dirección de ordenación.
+      schema:
+        allOf:
+        - $ref: '#/components/schemas/Direction'
+        default: DESC
+      example: ASC
+      summary: Direction
+    UserTeam:
+      name: X-User-Team
+      in: header
+      required: false
+      description: Equipo del usuario simulado en el entorno de demostración.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+        default: Payments
+      example: Payments
+      summary: UserTeam
+    UserPermissions:
+      name: X-User-Permissions
+      in: header
+      required: false
+      description: Permisos separados por comas del usuario simulado.
+      schema:
+        type: string
+        maxLength: 300
+        default: tickets.read
+      example: tickets.read,tickets.update
+      summary: UserPermissions
+  schemas:
+    TicketState:
+      type: string
+      description: Estado del flujo de trabajo del ticket.
+      enum:
+      - REPORTED
+      - IN_PROGRESS
+      - PENDING_SECURITY
+      - DONE
+      example: REPORTED
+      summary: TicketState
+      maxLength: 16
+    TicketSeverity:
+      type: string
+      description: Severidad de seguridad del ticket.
+      enum:
+      - CRITICAL
+      - HIGH
+      - MEDIUM
+      - LOW
+      example: HIGH
+      summary: TicketSeverity
+      maxLength: 8
+    Ticket:
+      type: object
+      description: Ticket de seguridad asignado a un equipo de desarrollo.
+      required:
+      - id
+      - key
+      - title
+      - asset
+      - creatorTeam
+      - assignedTeam
+      - assignee
+      - severity
+      - state
+      - restricted
+      - targetDate
+      - dueDate
+      - createdAt
+      - lastModified
+      properties:
+        id:
+          type: string
+          format: uuid
+          maxLength: 36
+          description: Identificador único del ticket.
+          example: b7c1e0de-6f0a-4f43-9a55-0a2f6c1d8e11
+          summary: Id
+        key:
+          type: string
+          maxLength: 16
+          pattern: ^SEC-[0-9]{4,6}$
+          description: Clave legible del ticket.
+          example: SEC-1024
+          summary: Key
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Resumen del hallazgo de seguridad.
+          example: Log4j vulnerable version in payments-api
+          summary: Title
+        asset:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Activo afectado; el literal None indica que se desconoce.
+          example: payments-api
+          summary: Asset
+        creatorTeam:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Equipo que creó el ticket.
+          example: Security Champions
+          summary: Creatorteam
+        assignedTeam:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: Equipo al que está asignado; null si aún no se asignó.
+          example: Payments
+          summary: Assignedteam
+        assignee:
+          type: string
+          format: email
+          maxLength: 254
+          description: Correo del responsable asignado.
+          example: jdoe@example.com
+          summary: Assignee
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/TicketSeverity'
+          description: Nivel de severidad del hallazgo.
+          example: HIGH
+          summary: Severity
+        state:
+          allOf:
+          - $ref: '#/components/schemas/TicketState'
+          description: Estado actual del ticket.
+          example: REPORTED
+          summary: State
+        restricted:
+          type: boolean
+          description: Indica si el ticket solo es visible para equipos autorizados.
+          example: false
+          summary: Restricted
+        targetDate:
+          type: string
+          format: date
+          description: Fecha objetivo inmutable calculada al crear el ticket.
+          example: '2026-11-30'
+          summary: Targetdate
+          maxLength: 10
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha compromiso fijada por el equipo; null si no existe.
+          example: null
+          summary: Duedate
+          maxLength: 35
+        createdAt:
+          type: string
+          format: date-time
+          description: Instante de creación del ticket.
+          example: '2026-10-01T09:12:00Z'
+          summary: Createdat
+          maxLength: 35
+        lastModified:
+          type: string
+          format: date-time
+          description: Instante de la última modificación.
+          example: '2026-10-20T15:40:00Z'
+          summary: Lastmodified
+          maxLength: 35
+      summary: Ticket
+      example: &id001
+        id: b7c1e0de-6f0a-4f43-9a55-0a2f6c1d8e11
+        key: SEC-1024
+        title: Log4j vulnerable version in payments-api
+        asset: payments-api
+        creatorTeam: Security Champions
+        assignedTeam: Payments
+        assignee: jdoe@example.com
+        severity: HIGH
+        state: REPORTED
+        restricted: false
+        targetDate: '2026-11-30'
+        dueDate: null
+        createdAt: '2026-10-01T09:12:00Z'
+        lastModified: '2026-10-20T15:40:00Z'
+    TicketPage:
+      type: object
+      description: Página de resultados con información de paginación.
+      required:
+      - data
+      - pagination
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          description: Tickets visibles de la página actual.
+          items:
+            allOf:
+            - $ref: '#/components/schemas/Ticket'
+            description: Ticket de seguridad incluido en la página.
+            summary: Ticket de la página
+            example: *id001
+          example: []
+          summary: Data
+        pagination:
+          allOf:
+          - $ref: '#/components/schemas/Pagination'
+          description: Metadatos de paginación.
+          example:
+            offset: 0
+            limit: 20
+            totalElements: 134
+          summary: Pagination
+      summary: TicketPage
+      example:
+        data:
+        - *id001
+        pagination:
+          offset: 0
+          limit: 20
+          totalElements: 134
+    Pagination:
+      type: object
+      description: Metadatos de paginación del listado.
+      required:
+      - offset
+      - limit
+      - totalElements
+      properties:
+        offset:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          description: Número de elementos omitidos.
+          example: 0
+          summary: Offset
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Tamaño de página solicitado.
+          example: 20
+          summary: Limit
+        totalElements:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          description: Número total de tickets visibles que coinciden.
+          example: 134
+          summary: Totalelements
+      summary: Pagination
+      example:
+        offset: 0
+        limit: 20
+        totalElements: 134
+    DueDateUpdate:
+      type: object
+      description: Campos permitidos para actualizar la fecha compromiso.
+      required:
+      - dueDate
+      properties:
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha compromiso ISO 8601 o null para eliminarla.
+          example: '2026-11-15T10:00:00Z'
+          summary: Duedate
+          maxLength: 35
+      summary: DueDateUpdate
+      example:
+        dueDate: '2026-11-15T10:00:00Z'
+      additionalProperties: false
+    CurrentUser:
+      type: object
+      description: Perfil simulado y permisos efectivos del usuario actual.
+      required:
+      - team
+      - permissions
+      properties:
+        team:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Equipo al que pertenece el usuario.
+          example: Payments
+          summary: Team
+        permissions:
+          type: array
+          maxItems: 20
+          description: Permisos concedidos al usuario.
+          items:
+            type: string
+            maxLength: 100
+            description: Elemento de permissions.
+            example: tickets.read
+            summary: Elemento de permissions
+          example:
+          - tickets.read
+          - tickets.update
+          summary: Permissions
+      summary: CurrentUser
+      example:
+        team: Payments
+        permissions:
+        - tickets.read
+        - tickets.update
+    Problem:
+      type: object
+      description: Error HTTP en formato Problem Details de RFC 9457.
+      required:
+      - type
+      - title
+      - status
+      - detail
+      properties:
+        type:
+          type: string
+          format: uri
+          maxLength: 500
+          description: URI que identifica el tipo de problema.
+          example: about:blank
+          summary: Type
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Resumen breve del problema.
+          example: Forbidden
+          summary: Title
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+          description: Código HTTP del problema.
+          example: 403
+          summary: Status
+        detail:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Explicación específica de este error.
+          example: Missing tickets.update permission
+          summary: Detail
+        instance:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: URI de la petición que produjo el problema.
+          example: /api/v1/tickets/b7c1e0de-6f0a-4f43-9a55-0a2f6c1d8e11
+          summary: Instance
+      summary: Problem
+      example:
+        type: about:blank
+        title: Forbidden
+        status: 403
+        detail: Missing tickets.update permission
+        instance: /api/v1/tickets/b7c1e0de-6f0a-4f43-9a55-0a2f6c1d8e11
+    TicketStateFilter:
+      type: string
+      description: Filtro por estado; ALL desactiva el filtro.
+      enum:
+      - ALL
+      - REPORTED
+      - IN_PROGRESS
+      - PENDING_SECURITY
+      - DONE
+      example: ALL
+      summary: TicketStateFilter
+      maxLength: 16
+    SeverityFilter:
+      type: string
+      description: Filtro por severidad; ALL desactiva el filtro.
+      enum:
+      - ALL
+      - CRITICAL
+      - HIGH
+      - MEDIUM
+      - LOW
+      example: ALL
+      summary: SeverityFilter
+      maxLength: 8
+    TicketSort:
+      type: string
+      description: Campo utilizado para ordenar los tickets.
+      enum:
+      - TARGET_DATE
+      - LAST_MODIFIED
+      - SEVERITY
+      example: TARGET_DATE
+      summary: Ticket sort
+      maxLength: 13
+    Direction:
+      type: string
+      description: Dirección de ordenación.
+      enum:
+      - ASC
+      - DESC
+      example: ASC
+      summary: Direction
+      maxLength: 4
+  responses:
+    Forbidden:
+      description: El usuario no tiene permisos suficientes.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Forbidden
+            status: 403
+            detail: Missing permission
+    NotFound:
+      description: El ticket no existe o no es visible para el usuario.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: Ticket not found
+    Conflict:
+      description: El ticket está en estado DONE y no admite modificaciones.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Conflict
+            status: 409
+            detail: DONE tickets cannot be updated
+    ValidationError:
+      description: Parámetros o cuerpo inválidos.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Unprocessable Entity
+            status: 422
+            detail: Request validation failed
