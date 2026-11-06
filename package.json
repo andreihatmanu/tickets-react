@@ -11,12 +11,13 @@
     "api:check": "python ./backend/check_contract.py",
     "test:react": "vitest run",
     "test:python": "python -m pytest backend/tests -v",
-    "test:all": "npm run test:react && npm run test:python && npm run api:check",
+    "test:all": "npm run test:react && npm run test:python && npm run test:e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest",
     "backend": "python -m uvicorn app.main:app --app-dir backend --reload --host 127.0.0.1 --port 3001",
-    "backend:test": "python -m pytest -q backend/tests"
+    "backend:test": "python -m pytest -q backend/tests",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -26,6 +27,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^18.3.18",

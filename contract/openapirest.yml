@@ -35,12 +35,12 @@ paths:
       - $ref: '#/components/parameters/Query'
       - $ref: '#/components/parameters/State'
       - $ref: '#/components/parameters/Severity'
+      - $ref: '#/components/parameters/AssignedTeam'
+      - $ref: '#/components/parameters/ExpiredOnly'
       - $ref: '#/components/parameters/Sort'
       - $ref: '#/components/parameters/Direction'
       - $ref: '#/components/parameters/UserTeam'
       - $ref: '#/components/parameters/UserPermissions'
-      - $ref: '#/components/parameters/AssignedTeam'
-      - $ref: '#/components/parameters/ExpiredOnly'
       responses:
         '200':
           description: Página de tickets visible para el usuario.
@@ -73,6 +73,38 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
   /api/v1/tickets/{ticketId}:
+    get:
+      operationId: getTicket
+      tags:
+      - Tickets
+      summary: Obtener detalle de un ticket
+      description: Devuelve el ticket si existe y es visible para el usuario; de lo contrario devuelve 404.
+      parameters:
+      - name: ticketId
+        in: path
+        required: true
+        description: Identificador UUID del ticket.
+        schema:
+          type: string
+          format: uuid
+          maxLength: 36
+        example: b7c1e0de-6f0a-4f43-9a55-0a2f6c1d8e11
+        summary: Identificador del ticket
+      - $ref: '#/components/parameters/UserTeam'
+      - $ref: '#/components/parameters/UserPermissions'
+      responses:
+        '200':
+          description: Ticket encontrado y visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
     patch:
       operationId: updateTicketDueDate
       tags:
@@ -97,13 +129,13 @@ paths:
       - $ref: '#/components/parameters/UserPermissions'
       requestBody:
         required: true
-        description: Nueva fecha compromiso del equipo; null elimina el compromiso.
+        description: Nueva fecha compromiso del equipo en formato YYYY-MM-DD.
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/DueDateUpdate'
             example:
-              dueDate: '2026-11-15T10:00:00Z'
+              dueDate: '2026-11-15'
       responses:
         '200':
           description: Ticket actualizado.
@@ -179,10 +211,10 @@ components:
       name: q
       in: query
       required: false
-      description: Texto buscado en clave, título, activo, equipos y responsable.
+      description: Texto buscado en key, title y asset sin distinguir mayúsculas.
       schema:
         type: string
-        maxLength: 200
+        maxLength: 256
         default: ''
       example: log4j
       summary: Query
@@ -208,6 +240,27 @@ components:
         default: ALL
       example: HIGH
       summary: Severity
+    AssignedTeam:
+      name: assignedTeam
+      in: query
+      required: false
+      description: Filtra por el equipo asignado al ticket.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+      example: Payments
+      summary: AssignedTeam
+    ExpiredOnly:
+      name: expiredOnly
+      in: query
+      required: false
+      description: Si es true, devuelve solo tickets caducados.
+      schema:
+        type: boolean
+        default: false
+      example: true
+      summary: ExpiredOnly
     Sort:
       name: sort
       in: query
@@ -253,27 +306,6 @@ components:
         default: tickets.read
       example: tickets.read,tickets.update
       summary: UserPermissions
-    AssignedTeam:
-      name: assignedTeam
-      in: query
-      required: false
-      description: Equipo al que está asignado el ticket.
-      schema:
-        type: string
-        minLength: 1
-        maxLength: 100
-      example: Payments
-      summary: AssignedTeam
-    ExpiredOnly:
-      name: expiredOnly
-      in: query
-      required: false
-      description: Si es true, devuelve únicamente tickets caducados.
-      schema:
-        type: boolean
-        default: false
-      example: true
-      summary: ExpiredOnly
   schemas:
     TicketState:
       type: string
@@ -391,12 +423,12 @@ components:
           maxLength: 10
         dueDate:
           type: string
-          format: date-time
+          format: date
           nullable: true
           description: Fecha compromiso fijada por el equipo; null si no existe.
-          example: null
+          example: '2026-11-15'
           summary: Duedate
-          maxLength: 35
+          maxLength: 10
         createdAt:
           type: string
           format: date-time
@@ -505,15 +537,14 @@ components:
       properties:
         dueDate:
           type: string
-          format: date-time
-          nullable: true
-          description: Fecha compromiso ISO 8601 o null para eliminarla.
-          example: '2026-11-15T10:00:00Z'
+          format: date
+          description: Fecha compromiso en formato YYYY-MM-DD.
+          example: '2026-11-15'
           summary: Duedate
-          maxLength: 35
+          maxLength: 10
       summary: DueDateUpdate
       example:
-        dueDate: '2026-11-15T10:00:00Z'
+        dueDate: '2026-11-15'
       additionalProperties: false
     CurrentUser:
       type: object

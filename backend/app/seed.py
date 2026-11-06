@@ -8,6 +8,7 @@ ASSETS = ["payments-api", "customer-db", "None", "auth-service", "mobile-gateway
 STATES = ["REPORTED", "IN_PROGRESS", "PENDING_SECURITY", "DONE"]
 SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
 
+
 def build_seed() -> list[Ticket]:
     today = date.today()
     now = datetime.now(timezone.utc).replace(microsecond=0)
@@ -39,6 +40,25 @@ def build_seed() -> list[Ticket]:
             createdAt=now - timedelta(days=i + 3),
             lastModified=now - timedelta(hours=i * 5),
         ))
+
+    # Ticket exclusivo para la prueba E2E.
+    tickets.append(Ticket(
+        id=str(uuid4()),
+        key="SEC-1090",
+        title="Ticket para prueba de actualización",
+        asset="payments-api",
+        creatorTeam="Payments",
+        assignedTeam="Payments",
+        assignee="ana.garcia@example.com",
+        severity="HIGH",
+        state="REPORTED",
+        restricted=False,
+        targetDate=today + timedelta(days=10),
+        dueDate=None,
+        createdAt=now,
+        lastModified=now + timedelta(seconds=1),
+    ))
+
     return tickets
 
 TICKETS = build_seed()
